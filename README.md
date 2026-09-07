@@ -36,6 +36,16 @@ python -m uvicorn app.main:app --reload --port 8000
 
 `ADMIN_USERNAME` / `ADMIN_PASSWORD`（默认 `admin` / `admin123`），首次启动自动播种。
 
+## Agent / 任务中心（M0）
+
+- **Agent 编排引擎**：`app/agents/runtime.py`（OpenAI Function Calling 循环）+ `app/tools/registry.py`（工具注册表）+ `app/adapters/llm/openai.py`（LLM Provider）。
+- **评分服务**：`app/services/scoring.py`（PRD 4.1.3 纯函数，`pytest tests/test_scoring.py`）。
+- **任务中心 API**：`GET/POST /api/v1/tasks`、`POST /tasks/{id}/resume|abort`、`PATCH /api/v1/review-points/{id}`。
+- **实时进度**：`GET /ws/tasks?token=<jwt>`（WebSocket 推送 `run.progress/blocked/done/failed`）。
+- **执行器**：`RUN_EXECUTOR=inline`（默认，无需 Redis）或 `celery`（需 Redis/Celery worker）。
+
+首次跑任务前确保 `OPENAI_API_KEY` 已配置，并用 `alembic upgrade head` 建好表（Agent 定义由 seed 自动播种）。
+
 ## 工程约定
 
 - 核心错误体系见 `app.core.exceptions`，错误码 → HTTP 映射表在其末尾。

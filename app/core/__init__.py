@@ -18,6 +18,7 @@ from app.core.exceptions import (
     TranscriptionError,
 )
 from app.core.logging import get_logger, setup_logging
+from app.core.ws_manager import ws_manager
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -59,4 +60,5 @@ __all__ = [
     "hash_password",
     "verify_password",
     "HTTP_STATUS_BY_CODE",
+    "ws_manager",
 ]

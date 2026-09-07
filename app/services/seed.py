@@ -1,12 +1,26 @@
 """初始化数据种子：管理员、风控默认、8 个榜单入口。幂等，可反复执行。"""
 from __future__ import annotations
 
+__all__ = ["init_db", "ensure_admin", "seed_risk_config", "seed_ranking_sources", "seed_agent_defs"]
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.agents.prompts import AGENT_PROMPTS
 from app.core.config import get_settings
 from app.core.security import hash_password
-from app.models import RankingSource, RiskConfig, User
+from app.models import AgentDef, RankingSource, RiskConfig, User
+
+# 各 Agent 的工具白名单（工具实现随里程碑陆续注册；未注册的 key 会被 tools_for 安全忽略）
+AGENT_TOOL_KEYS: dict[str, list[str]] = {
+    "qianfan_collector": [],  # 浏览器采集工具在 M0 采集里程碑接入
+    "account_analyzer": ["account_score", "agent_log", "now"],
+    "note_analyzer": ["agent_log"],
+    "content_generator": ["agent_log"],
+    "content_reviewer": ["agent_log"],
+}
+
+AGENT_MODEL = "gpt-4o"
 
 # 风控 scope 默认延迟区间（秒）：与详细设计 8.3 对齐
 RISK_DEFAULTS: dict[str, tuple[int, int]] = {
@@ -60,9 +74,36 @@ def seed_ranking_sources(db: Session) -> None:
         db.add(RankingSource(key=key, name=name, page_max=20, delay_scope="ranking", enabled=True))
 
 
+def seed_agent_defs(db: Session) -> None:
+    """幂等播种子 Agent 定义：提示词在 emits 模块，模型与工具白名单此处配置。"""
+    descriptions = {
+        "qianfan_collector": "千帆榜单采集",
+        "account_analyzer": "账号分析（评分）",
+        "note_analyzer": "单篇笔记拆解",
+        "content_generator": "日更内容生成",
+        "content_reviewer": "内容审查",
+    }
+    for key, prompt in AGENT_PROMPTS.items():
+        exists = db.scalar(select(AgentDef).where(AgentDef.key == key))
+        if exists:
+            continue
+        db.add(
+            AgentDef(
+                key=key,
+                name=descriptions.get(key, key),
+                system_prompt=prompt,
+                tool_keys=AGENT_TOOL_KEYS.get(key, []),
+                model=AGENT_MODEL,
+                temperature=0.2,
+                is_enabled=True,
+            )
+        )
+
+
 def init_db(db: Session) -> None:
     """幂等初始化：所有子函数都以「不存在才插入」为前提。"""
     seed_risk_config(db)
     seed_ranking_sources(db)
+    seed_agent_defs(db)
     ensure_admin(db)
     db.commit()

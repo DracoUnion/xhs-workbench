@@ -1,16 +1,19 @@
 """FastAPI 应用工厂：生命周期、异常处理器、路由挂载。"""
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.api.v1.router import api_router
+from app.api.v1.ws import ws_router
 from app.core.config import get_settings
 from app.core.database import SessionLocal, engine
 from app.core.exceptions import AppError, HTTP_STATUS_BY_CODE
 from app.core.logging import get_logger, setup_logging
+from app.core.ws_manager import ws_manager
 from app.services.seed import init_db
 
 logger = get_logger("main")
@@ -19,6 +22,8 @@ logger = get_logger("main")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
+    # 绑定主事件循环，供 Celery/inline 工作线程同步推送 WS 事件
+    ws_manager.bind_loop(asyncio.get_running_loop())
     # 数据库不可用时（如尚未启动/建表）不阻断进程，便于先启动看健康检查
     try:
         with SessionLocal() as db:
@@ -27,6 +32,7 @@ async def lifespan(app: FastAPI):
     except Exception as exc:  # noqa: BLE001
         logger.warning("database unavailable at startup; continue booting", error=str(exc))
     yield
+    ws_manager.bind_loop(None)
     engine.dispose()
 
 
@@ -52,6 +58,7 @@ def create_app() -> FastAPI:
         return {"status": "ok", "app": s.app_name, "debug": s.debug}
 
     app.include_router(api_router, prefix=s.api_v1_prefix)
+    app.include_router(ws_router)  # /ws/tasks 不进 /api/v1 前缀
     return app
 
 

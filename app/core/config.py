@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     app_name: str = "小红书 AI 工作台后端"
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
+    # 任务执行器：inline（默认，无需 Redis）| celery（需 Redis/Celery worker）
+    run_executor: str = "inline"
 
     # ---------- 数据库 ----------
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/xhs_workbench"
@@ -37,6 +39,7 @@ class Settings(BaseSettings):
 
     # ---------- LLM ----------
     openai_api_key: str = ""
+    llm_model_default: str = "gpt-4o"
 
     # ---------- 存储 ----------
     data_dir: str = "data"

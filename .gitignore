@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# 运行时产物（浏览器上下文、上传资料、日志）
+data/
+
+# 本地数据库备份
+*.sql
+*.dump

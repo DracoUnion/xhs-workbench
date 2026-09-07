@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xhs-workbench-backend"
+version = "0.1.0"
+description = "小红书 AI 工作台后端（FastAPI + OpenAI API）"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0.30,<2.1",
+    "alembic>=1.13",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.7,<3",
+    "pydantic-settings>=2.3",
+    "PyJWT>=2.8",
+    "bcrypt>=4.0.1,<5",
+    "structlog>=24.1",
+    "redis>=5",
+    "celery>=5.4",
+    "python-multipart>=0.0.9",
+    "httpx>=0.27",
+    "openai>=1.40",
+]
+
+[project.scripts]
+xhs-backend = "app.main:run"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools]
+# packages 由 find 自动收集，无需显式列出

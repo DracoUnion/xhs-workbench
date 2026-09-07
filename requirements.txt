@@ -1,0 +1,2 @@
+# 依赖清单以 pyproject.toml [project.dependencies] 为唯一来源，此处仅指向项目本身
+-e .

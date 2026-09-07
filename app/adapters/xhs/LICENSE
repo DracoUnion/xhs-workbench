@@ -1,0 +1,12 @@
+Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+Copyright 2025 jackwener (upstream xhs-cli source files).
+
+The vendored client.py, auth.py, and exceptions.py files are derived from
+https://github.com/jackwener/xhs-cli and remain under the Apache License 2.0.
+The project-specific bridge.py and package wiring are original additions.
+
+A copy of the full Apache License 2.0 text is available at:
+https://www.apache.org/licenses/LICENSE-2.0

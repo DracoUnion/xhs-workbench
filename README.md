@@ -46,6 +46,18 @@ python -m uvicorn app.main:app --reload --port 8000
 
 首次跑任务前确保 `OPENAI_API_KEY` 已配置，并用 `alembic upgrade head` 建好表（Agent 定义由 seed 自动播种）。
 
+## 小红书采集（xhs-cli 适配器）
+
+`app/adapters/xhs/` 直接整合了 [jackwener/xhs-cli](https://github.com/jackwener/xhs-cli)（Apache-2.0）的浏览器采集客户端（读取 `__INITIAL_STATE__`，规避接口风控 300011）。
+
+- **不装依赖也能启动**：浏览器依赖（camoufox）在函数内惰性导入，采集/登录不可用时抛 `XHS_BROWSER_UNAVAILABLE`，其余功能正常。
+- **启用采集**：`pip install -e ".[xhs]"`。
+- **登录态**：
+  - 交互扫码：`python -m scripts.xhs_login`（宿主机终端跑，扫码后存 `~/.xhs-cli/cookies.json`）；
+  - 或 API 下发 cookie：`PUT /api/v1/xhs/cookies`（admin，body `{cookie: "a1=...; web_session=..."}`）。
+- **状态**：`GET /api/v1/xhs/status`。
+- **工具**：`xhs_search_notes` / `xhs_get_note_detail` / `xhs_get_user_info` / `xhs_get_user_posts` / `xhs_get_note_comments`。
+
 ## 工程约定
 
 - 核心错误体系见 `app.core.exceptions`，错误码 → HTTP 映射表在其末尾。

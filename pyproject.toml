@@ -33,6 +33,10 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
 ]
+# 小红书浏览器采集（xhs-cli）。未安装时后端可正常启动，仅采集/登录功能不可用。
+xhs = [
+    "camoufox>=0.4",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]

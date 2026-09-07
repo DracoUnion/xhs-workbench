@@ -41,6 +41,10 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     llm_model_default: str = "gpt-4o"
 
+    # ---------- 小红书 xhs-cli 适配器 ----------
+    xhs_cookie_file: str = "~/.xhs-cli/cookies.json"
+    xhs_cookies: str = ""
+
     # ---------- 存储 ----------
     data_dir: str = "data"
     browser_contexts_dir: str = "data/browser-contexts"

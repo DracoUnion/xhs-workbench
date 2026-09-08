@@ -128,6 +128,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Python 与 Node 环境
+.venv
+node_modules/
+
 # 运行时产物（浏览器上下文、上传资料、日志）
 data/
 

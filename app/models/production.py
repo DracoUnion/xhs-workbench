@@ -1,8 +1,7 @@
 """Production 上下文：对标资料、网站/工具开发资产。"""
 from __future__ import annotations
 
-from sqlalchemy import BigInteger, ForeignKey, Index, String, Text, text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import BigInteger, ForeignKey, Index, JSON, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.mixins import PKMixin, TimestampMixin
@@ -34,10 +33,10 @@ class DesignDoc(PKMixin, TimestampMixin, Base):
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"), nullable=False)
     # requirements|prototype|ui|logic|accept
     stage: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'requirements'"))
-    page_list: Mapped[list | None] = mapped_column(JSONB)
-    proto_images: Mapped[list | None] = mapped_column(JSONB)
+    page_list: Mapped[list | None] = mapped_column(JSON)
+    proto_images: Mapped[list | None] = mapped_column(JSON)
     repo_url: Mapped[str | None] = mapped_column(Text)
     build_path: Mapped[str | None] = mapped_column(Text)
-    accept_report: Mapped[dict | None] = mapped_column(JSONB)
+    accept_report: Mapped[dict | None] = mapped_column(JSON)
 
     __table_args__ = (Index("ix_design_docs_product", "product_id"),)

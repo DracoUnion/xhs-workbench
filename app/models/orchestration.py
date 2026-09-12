@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import (
     UUID,
@@ -12,13 +12,14 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     Numeric,
     String,
     Text,
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.mixins import PKMixin, TimestampMixin
@@ -33,31 +34,31 @@ class AgentDef(PKMixin, TimestampMixin, Base):
     key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
-    tool_keys: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'"))
+    tool_keys: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
     model: Mapped[str] = mapped_column(String(48), nullable=False, server_default=text("'gpt-4o'"))
     temperature: Mapped[float] = mapped_column(Numeric(2, 1), nullable=False, server_default=text("0.2"))
-    timeout_seconds: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("6 * 3600"))
+    timeout_seconds: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("21600"))
     is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
 
 
 class AgentRun(PKMixin, TimestampMixin, Base):
-    """一次 Agent 执行：全量上下文 JSONB 持久化 = 断点续跑能力。"""
+    """一次 Agent 执行：全量上下文 JSON 持久化 = 断点续跑能力。"""
 
     __tablename__ = "agent_runs"
 
     run_uuid: Mapped[UUID] = mapped_column(
-        UUID(as_uuid=True), unique=True, nullable=False, server_default=text("gen_random_uuid()")
+        UUID(as_uuid=True), unique=True, nullable=False, default=uuid4
     )
     agent_key: Mapped[str] = mapped_column(ForeignKey("agent_defs.key"), nullable=False)
     product_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'pending'")
     )  # pending|running|blocked|done|failed|killed
-    messages: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'"))
-    tool_calls: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'"))
-    checkpoint: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    result: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    error: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    messages: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
+    tool_calls: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
+    checkpoint: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    error: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     continue_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # 排队/复活时间
@@ -76,7 +77,7 @@ class ReviewPoint(PKMixin, Base):
     run_id: Mapped[int] = mapped_column(ForeignKey("agent_runs.id"), nullable=False)
     agent_key: Mapped[str] = mapped_column(String(64), nullable=False)
     rtype: Mapped[str] = mapped_column(String(16), nullable=False)  # AUTO|REVIEW|MANUAL
-    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'"))
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
     action: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'pending'"))
     action_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     action_note: Mapped[str | None] = mapped_column(Text, nullable=True)

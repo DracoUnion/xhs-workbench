@@ -10,12 +10,12 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     String,
     Text,
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.mixins import PKMixin, TimestampMixin
@@ -49,9 +49,9 @@ class Note(PKMixin, TimestampMixin, Base):
     note_id: Mapped[str] = mapped_column(String(64), nullable=False)
     title: Mapped[str | None] = mapped_column(String(255))
     body: Mapped[str | None] = mapped_column(Text)
-    topics: Mapped[list | None] = mapped_column(JSONB)
+    topics: Mapped[list | None] = mapped_column(JSON)
     author: Mapped[str | None] = mapped_column(String(128))
-    interactions: Mapped[dict | None] = mapped_column(JSONB)  # {likes,collects,comments}
+    interactions: Mapped[dict | None] = mapped_column(JSON)  # {likes,collects,comments}
     media_type: Mapped[str] = mapped_column(String(8), nullable=False)
     a_to_z_group: Mapped[str | None] = mapped_column(String(8))
     analyzed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
@@ -102,7 +102,7 @@ class Transcript(PKMixin, Base):
     note_id: Mapped[int] = mapped_column(ForeignKey("notes.id"), unique=True, nullable=False)
     engine: Mapped[str] = mapped_column(String(32), nullable=False)  # whisper_local|openai
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    meta: Mapped[dict | None] = mapped_column(JSONB)
+    meta: Mapped[dict | None] = mapped_column(JSON)
 
 
 class NoteAnalysis(PKMixin, Base):
@@ -116,7 +116,7 @@ class NoteAnalysis(PKMixin, Base):
     hook_type: Mapped[str | None] = mapped_column(String(16))  # 痛点|疑问|反差|数据|故事|清单
     cover_rule: Mapped[str | None] = mapped_column(Text)
     interaction_feature: Mapped[str | None] = mapped_column(String(32))  # collect_high|comment_high|none
-    detail: Mapped[dict | None] = mapped_column(JSONB)
+    detail: Mapped[dict | None] = mapped_column(JSON)
     analyzed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -133,7 +133,7 @@ class Template(PKMixin, TimestampMixin, Base):
     draft_md: Mapped[str | None] = mapped_column(Text)
     # draft|to_skill|used
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'draft'"))
-    note_ids: Mapped[list | None] = mapped_column(JSONB)  # 支撑对标 note 列表
+    note_ids: Mapped[list | None] = mapped_column(JSON)  # 支撑对标 note 列表
 
     __table_args__ = (
         Index("uq_templates_product_cluster", "product_id", "cluster_key", unique=True),
@@ -148,8 +148,8 @@ class Skill(PKMixin, TimestampMixin, Base):
     product_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     md: Mapped[str] = mapped_column(Text, nullable=False)
-    files_whitelist: Mapped[list] = mapped_column(JSONB, nullable=False, server_default=text("'[]'"))
-    rules: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'"))
+    files_whitelist: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
+    rules: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
     # draft|testing|active
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'draft'"))
     # manual|auto
@@ -189,8 +189,8 @@ class ContentPackage(PKMixin, TimestampMixin, Base):
     seq: Mapped[int] = mapped_column(Integer, nullable=False)
     title: Mapped[str | None] = mapped_column(String(255))
     body: Mapped[str | None] = mapped_column(Text)
-    topics: Mapped[list | None] = mapped_column(JSONB)
-    images: Mapped[list | None] = mapped_column(JSONB)  # [{seq,type:cover|page,path}]
+    topics: Mapped[list | None] = mapped_column(JSON)
+    images: Mapped[list | None] = mapped_column(JSON)  # [{seq,type:cover|page,path}]
     # draft|reviewing|approved|rejected
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'draft'"))
     rounds: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
@@ -213,7 +213,7 @@ class Review(PKMixin, Base):
     )
     reviewer_agent_key: Mapped[str] = mapped_column(String(64), nullable=False)
     verdict: Mapped[str] = mapped_column(String(16), nullable=False)  # passed|rejected
-    issues: Mapped[list | None] = mapped_column(JSONB)  # [{type,message,ref}]
+    issues: Mapped[list | None] = mapped_column(JSON)  # [{type,message,ref}]
     rounds: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
     created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))  # 人工审核记录
     created_at: Mapped[datetime] = mapped_column(

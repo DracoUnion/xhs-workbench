@@ -9,13 +9,13 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     Numeric,
     String,
     Text,
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.mixins import PKMixin, TimestampMixin
@@ -67,7 +67,7 @@ class AccountMetric(PKMixin, Base):
     trust_bonus: Mapped[float | None] = mapped_column(Numeric(10, 4))
     low_fans_bonus: Mapped[float | None] = mapped_column(Numeric(10, 4))
     total: Mapped[float | None] = mapped_column(Numeric(10, 4))
-    breakdown: Mapped[dict | None] = mapped_column(JSONB)  # {amount_bucket, conv_bucket,...}
+    breakdown: Mapped[dict | None] = mapped_column(JSON)  # {amount_bucket, conv_bucket,...}
 
     account: Mapped[Account] = relationship(back_populates="metrics")
 
@@ -88,7 +88,7 @@ class Ranking(PKMixin, Base):
     pay_rate: Mapped[float | None] = mapped_column(Numeric(5, 2))
     amount_low: Mapped[int | None] = mapped_column(Integer)
     amount_high: Mapped[int | None] = mapped_column(Integer)
-    raw: Mapped[dict | None] = mapped_column(JSONB)
+    raw: Mapped[dict | None] = mapped_column(JSON)
     collected_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

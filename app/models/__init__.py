@@ -1,5 +1,5 @@
 """ORM 模型注册表：导入所有模型使 Base.metadata 完整，供 Alembic 与查询使用。"""
-from app.core.database import Base
+from app.core.database import Base, engine
 from app.models.platform import AppSetting, RiskConfig, User
 from app.models.orchestration import AgentDef, AgentRun, Dedup, ReviewPoint
 from app.models.discovery import (
@@ -59,4 +59,8 @@ __all__ = [
     "SkillVersion",
     "Template",
     "Transcript",
+    "init_tables",
 ]
+
+def init_tables():
+    Base.metadata.create_all(engine)

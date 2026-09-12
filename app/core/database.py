@@ -30,7 +30,7 @@ engine = create_engine(
     pool_size=5,
     max_overflow=10,
     # 数据库未启动时快速失败，避免启动流程被连接超时阻塞
-    connect_args={"connect_timeout": 3},
+    # connect_args={"connect_timeout": 3},
 )
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)

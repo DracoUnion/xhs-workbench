@@ -24,7 +24,8 @@ class Settings(BaseSettings):
     run_executor: str = "inline"
 
     # ---------- 数据库 ----------
-    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/xhs_workbench"
+    # database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/xhs_workbench"
+    database_url: str = "sqlite:///xhs_workbench.db"
 
     # ---------- Redis / Celery ----------
     redis_url: str = "redis://localhost:6379/0"

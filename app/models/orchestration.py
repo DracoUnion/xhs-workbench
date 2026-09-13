@@ -9,7 +9,6 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     DateTime,
-    ForeignKey,
     Index,
     Integer,
     JSON,
@@ -19,18 +18,18 @@ from sqlalchemy import (
     func,
     text,
 )
-
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.mixins import PKMixin, TimestampMixin
+from app.models.mixins import TimestampMixin
 from app.core.database import Base
 
 
-class AgentDef(PKMixin, TimestampMixin, Base):
+class AgentDef(TimestampMixin, Base):
     """子 Agent 配置（提示词 + 工具白名单 + 模型），入库可在线改。"""
 
     __tablename__ = "agent_defs"
 
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
@@ -41,15 +40,16 @@ class AgentDef(PKMixin, TimestampMixin, Base):
     is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
 
 
-class AgentRun(PKMixin, TimestampMixin, Base):
+class AgentRun(TimestampMixin, Base):
     """一次 Agent 执行：全量上下文 JSON 持久化 = 断点续跑能力。"""
 
     __tablename__ = "agent_runs"
 
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     run_uuid: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True), unique=True, nullable=False, default=uuid4
     )
-    agent_key: Mapped[str] = mapped_column(ForeignKey("agent_defs.key"), nullable=False)
+    agent_key: Mapped[str] = mapped_column(String(64), nullable=False)
     product_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'pending'")
@@ -69,28 +69,30 @@ class AgentRun(PKMixin, TimestampMixin, Base):
     )
 
 
-class ReviewPoint(PKMixin, Base):
+class ReviewPoint(Base):
     """检查点：AUTO / REVIEW / MANUAL；REVIEW 阻塞 Run 等人工动作。"""
 
     __tablename__ = "review_points"
 
-    run_id: Mapped[int] = mapped_column(ForeignKey("agent_runs.id"), nullable=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    run_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     agent_key: Mapped[str] = mapped_column(String(64), nullable=False)
     rtype: Mapped[str] = mapped_column(String(16), nullable=False)  # AUTO|REVIEW|MANUAL
     payload: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
     action: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'pending'"))
-    action_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    action_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     action_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     acted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (Index("ix_review_pending", "action", "rtype"),)
 
 
-class Dedup(PKMixin, Base):
+class Dedup(Base):
     """统一去重：同一产品下按 scope 去重（note|product|link）。"""
 
     __tablename__ = "dedup"
 
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     product_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     scope: Mapped[str] = mapped_column(String(16), nullable=False)
     fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)

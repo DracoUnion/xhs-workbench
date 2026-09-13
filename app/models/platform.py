@@ -3,16 +3,17 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, JSON, func, text
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Integer, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.mixins import PKMixin, TimestampMixin
+from app.models.mixins import TimestampMixin
 from app.core.database import Base
 
 
-class User(PKMixin, TimestampMixin, Base):
+class User(TimestampMixin, Base):
     __tablename__ = "users"
 
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'operator'"))
@@ -23,11 +24,12 @@ class User(PKMixin, TimestampMixin, Base):
         return f"<User {self.username} ({self.role})>"
 
 
-class RiskConfig(PKMixin, Base):
+class RiskConfig(Base):
     """风控节奏配置：每个动作 scope 的随机延迟区间与重试参数。"""
 
     __tablename__ = "risk_config"
 
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     scope: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
     min_delay_s: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("60"))
     max_delay_s: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("90"))
@@ -37,7 +39,7 @@ class RiskConfig(PKMixin, Base):
 
 
 class AppSetting(Base):
-    """应用级键值配置（如 locators、llm.model_default），value 为 JSONB。"""
+    """应用级键值配置（如 locators、llm.model_default），value 为 JSON。"""
 
     __tablename__ = "app_settings"
 

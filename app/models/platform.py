@@ -14,11 +14,13 @@ class User(TimestampMixin, Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, server_default=text("''"))
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("''"))
     role: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'operator'"))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
-    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<User {self.username} ({self.role})>"
@@ -30,7 +32,7 @@ class RiskConfig(Base):
     __tablename__ = "risk_config"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    scope: Mapped[str] = mapped_column(String(32), unique=True, nullable=False)
+    scope: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, server_default=text("''"))
     min_delay_s: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("60"))
     max_delay_s: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("90"))
     retry_max: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("3"))
@@ -44,7 +46,7 @@ class AppSetting(Base):
     __tablename__ = "app_settings"
 
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
-    value: Mapped[dict] = mapped_column(JSON, nullable=False)
+    value: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

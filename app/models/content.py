@@ -25,8 +25,8 @@ class Keyword(TimestampMixin, Base):
     __tablename__ = "keywords"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    word: Mapped[str] = mapped_column(String(128), nullable=False)
+    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    word: Mapped[str] = mapped_column(String(128), nullable=False, server_default=text("''"))
     is_core: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     a_to_z: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     collect_comments: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
@@ -45,16 +45,16 @@ class Note(TimestampMixin, Base):
     __tablename__ = "notes"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    keyword_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    note_id: Mapped[str] = mapped_column(String(64), nullable=False)
-    title: Mapped[str | None] = mapped_column(String(255))
-    body: Mapped[str | None] = mapped_column(Text)
-    topics: Mapped[list | None] = mapped_column(JSON)
-    author: Mapped[str | None] = mapped_column(String(128))
-    interactions: Mapped[dict | None] = mapped_column(JSON)  # {likes,collects,comments}
-    media_type: Mapped[str] = mapped_column(String(8), nullable=False)
-    a_to_z_group: Mapped[str | None] = mapped_column(String(8))
+    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    keyword_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    note_id: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    title: Mapped[str | None] = mapped_column(String(255), server_default=text("''"))
+    body: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
+    topics: Mapped[list | None] = mapped_column(JSON, server_default=text("'[]'"))
+    author: Mapped[str | None] = mapped_column(String(128), server_default=text("''"))
+    interactions: Mapped[dict | None] = mapped_column(JSON, server_default=text("'{}'"))  # {likes,collects,comments}
+    media_type: Mapped[str] = mapped_column(String(8), nullable=False, server_default=text("''"))
+    a_to_z_group: Mapped[str | None] = mapped_column(String(8), server_default=text("''"))
     analyzed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     collected_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -75,9 +75,9 @@ class NoteImage(Base):
     __tablename__ = "note_images"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    note_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    url: Mapped[str] = mapped_column(Text, nullable=False)
-    local_path: Mapped[str | None] = mapped_column(Text)
+    note_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    url: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    local_path: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
     seq: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
 
     __table_args__ = (Index("uq_note_images_note_seq", "note_id", "seq", unique=True),)
@@ -87,19 +87,19 @@ class NoteFrame(Base):
     __tablename__ = "note_frames"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    note_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    ts_sec: Mapped[int | None] = mapped_column(Integer)
-    local_path: Mapped[str | None] = mapped_column(Text)
+    note_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    ts_sec: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))
+    local_path: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
 
 
 class Transcript(Base):
     __tablename__ = "transcripts"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    note_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
-    engine: Mapped[str] = mapped_column(String(32), nullable=False)  # whisper_local|openai
-    text: Mapped[str] = mapped_column(Text, nullable=False)
-    meta: Mapped[dict | None] = mapped_column(JSON)
+    note_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, server_default=text("0"))
+    engine: Mapped[str] = mapped_column(String(32), nullable=False, server_default=text("''"))
+    content_text: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    meta_data: Mapped[dict | None] = mapped_column(JSON, server_default=text("'{}'"))
 
 
 class NoteAnalysis(Base):
@@ -108,13 +108,13 @@ class NoteAnalysis(Base):
     __tablename__ = "note_analyses"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    note_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False)
-    title_formula: Mapped[str | None] = mapped_column(Text)
-    structure: Mapped[str | None] = mapped_column(Text)
-    hook_type: Mapped[str | None] = mapped_column(String(16))  # 痛点|疑问|反差|数据|故事|清单
-    cover_rule: Mapped[str | None] = mapped_column(Text)
-    interaction_feature: Mapped[str | None] = mapped_column(String(32))  # collect_high|comment_high|none
-    detail: Mapped[dict | None] = mapped_column(JSON)
+    note_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, server_default=text("0"))
+    title_formula: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
+    structure: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
+    hook_type: Mapped[str | None] = mapped_column(String(16), server_default=text("''"))
+    cover_rule: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
+    interaction_feature: Mapped[str | None] = mapped_column(String(32), server_default=text("''"))
+    detail: Mapped[dict | None] = mapped_column(JSON, server_default=text("'{}'"))
     analyzed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -126,13 +126,13 @@ class Template(TimestampMixin, Base):
     __tablename__ = "templates"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    cluster_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    cluster_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
     supported_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
-    draft_md: Mapped[str | None] = mapped_column(Text)
+    draft_md: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
     # draft|to_skill|used
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'draft'"))
-    note_ids: Mapped[list | None] = mapped_column(JSON)  # 支撑对标 note 列表
+    note_ids: Mapped[list | None] = mapped_column(JSON, server_default=text("'[]'"))  # 支撑对标 note 列表
 
     __table_args__ = (
         Index("uq_templates_product_cluster", "product_id", "cluster_key", unique=True),
@@ -145,9 +145,9 @@ class Skill(TimestampMixin, Base):
     __tablename__ = "skills"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    name: Mapped[str] = mapped_column(String(128), nullable=False)
-    md: Mapped[str] = mapped_column(Text, nullable=False)
+    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    name: Mapped[str] = mapped_column(String(128), nullable=False, server_default=text("''"))
+    md: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     files_whitelist: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
     rules: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
     # draft|testing|active
@@ -163,11 +163,11 @@ class SkillVersion(Base):
     __tablename__ = "skill_versions"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    skill_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    version: Mapped[int] = mapped_column(Integer, nullable=False)
-    md: Mapped[str] = mapped_column(Text, nullable=False)
-    created_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    note: Mapped[str | None] = mapped_column(Text)
+    skill_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    md: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    created_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    note: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -181,12 +181,12 @@ class ContentPackage(TimestampMixin, Base):
     __tablename__ = "content_packages"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    skill_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    seq: Mapped[int] = mapped_column(Integer, nullable=False)
-    title: Mapped[str | None] = mapped_column(String(255))
-    body: Mapped[str | None] = mapped_column(Text)
-    topics: Mapped[list | None] = mapped_column(JSON)
-    images: Mapped[list | None] = mapped_column(JSON)  # [{seq,type:cover|page,path}]
+    skill_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    seq: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    title: Mapped[str | None] = mapped_column(String(255), server_default=text("''"))
+    body: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
+    topics: Mapped[list | None] = mapped_column(JSON, server_default=text("'[]'"))
+    images: Mapped[list | None] = mapped_column(JSON, server_default=text("'[]'"))  # [{seq,type:cover|page,path}]
     # draft|reviewing|approved|rejected
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'draft'"))
     rounds: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
@@ -203,12 +203,12 @@ class Review(Base):
     __tablename__ = "reviews"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    content_package_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    reviewer_agent_key: Mapped[str] = mapped_column(String(64), nullable=False)
-    verdict: Mapped[str] = mapped_column(String(16), nullable=False)  # passed|rejected
-    issues: Mapped[list | None] = mapped_column(JSON)  # [{type,message,ref}]
+    content_package_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    reviewer_agent_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    verdict: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("''"))
+    issues: Mapped[list | None] = mapped_column(JSON, server_default=text("'[]'"))  # [{type,message,ref}]
     rounds: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
-    created_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True)  # 人工审核记录
+    created_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))  # 人工审核记录
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

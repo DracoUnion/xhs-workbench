@@ -14,12 +14,12 @@ class Material(TimestampMixin, Base):
     __tablename__ = "materials"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    filename: Mapped[str | None] = mapped_column(String(255))
-    mime: Mapped[str | None] = mapped_column(String(64))
-    local_path: Mapped[str | None] = mapped_column(Text)
-    size_bytes: Mapped[int | None] = mapped_column(BigInteger)
-    parsed_text: Mapped[str | None] = mapped_column(Text)
+    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    filename: Mapped[str | None] = mapped_column(String(255), server_default=text("''"))
+    mime: Mapped[str | None] = mapped_column(String(64), server_default=text("''"))
+    local_path: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
+    size_bytes: Mapped[int | None] = mapped_column(BigInteger, server_default=text("0"))
+    parsed_text: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
     # pending|done|failed
     ingest_status: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'pending'"))
 
@@ -32,13 +32,13 @@ class DesignDoc(TimestampMixin, Base):
     __tablename__ = "design_docs"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
     # requirements|prototype|ui|logic|accept
     stage: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'requirements'"))
-    page_list: Mapped[list | None] = mapped_column(JSON)
-    proto_images: Mapped[list | None] = mapped_column(JSON)
-    repo_url: Mapped[str | None] = mapped_column(Text)
-    build_path: Mapped[str | None] = mapped_column(Text)
-    accept_report: Mapped[dict | None] = mapped_column(JSON)
+    page_list: Mapped[list | None] = mapped_column(JSON, server_default=text("'[]'"))
+    proto_images: Mapped[list | None] = mapped_column(JSON, server_default=text("'[]'"))
+    repo_url: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
+    build_path: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
+    accept_report: Mapped[dict | None] = mapped_column(JSON, server_default=text("'{}'"))
 
     __table_args__ = (Index("ix_design_docs_product", "product_id"),)

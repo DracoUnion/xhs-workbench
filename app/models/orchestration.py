@@ -30,9 +30,9 @@ class AgentDef(TimestampMixin, Base):
     __tablename__ = "agent_defs"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
-    name: Mapped[str] = mapped_column(String(64), nullable=False)
-    system_prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, server_default=text("''"))
+    name: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     tool_keys: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
     model: Mapped[str] = mapped_column(String(48), nullable=False, server_default=text("'gpt-4o'"))
     temperature: Mapped[float] = mapped_column(Numeric(2, 1), nullable=False, server_default=text("0.2"))
@@ -49,19 +49,19 @@ class AgentRun(TimestampMixin, Base):
     run_uuid: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True), unique=True, nullable=False, default=uuid4
     )
-    agent_key: Mapped[str] = mapped_column(String(64), nullable=False)
-    product_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    agent_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    product_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'pending'")
     )  # pending|running|blocked|done|failed|killed
     messages: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
     tool_calls: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
-    checkpoint: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    error: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    continue_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # 排队/复活时间
+    checkpoint: Mapped[dict | None] = mapped_column(JSON, nullable=True, server_default=text("'{}'"))
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True, server_default=text("'{}'"))
+    error: Mapped[dict | None] = mapped_column(JSON, nullable=True, server_default=text("'{}'"))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    continue_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (
         Index("ix_agent_runs_status_continue", "status", "continue_at"),
@@ -75,14 +75,14 @@ class ReviewPoint(Base):
     __tablename__ = "review_points"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    run_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    agent_key: Mapped[str] = mapped_column(String(64), nullable=False)
-    rtype: Mapped[str] = mapped_column(String(16), nullable=False)  # AUTO|REVIEW|MANUAL
+    run_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    agent_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    rtype: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("''"))
     payload: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
     action: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'pending'"))
-    action_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    action_note: Mapped[str | None] = mapped_column(Text, nullable=True)
-    acted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    action_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    action_note: Mapped[str | None] = mapped_column(Text, nullable=True, server_default=text("''"))
+    acted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (Index("ix_review_pending", "action", "rtype"),)
 
@@ -93,9 +93,9 @@ class Dedup(Base):
     __tablename__ = "dedup"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    scope: Mapped[str] = mapped_column(String(16), nullable=False)
-    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    scope: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("''"))
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
     first_seen: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

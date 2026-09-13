@@ -10,6 +10,8 @@ from app.agents.prompts import AGENT_PROMPTS
 from app.core.config import get_settings
 from app.core.security import hash_password
 from app.models import AgentDef, RankingSource, RiskConfig, User
+from app.models import init_tables
+from app.core import SessionLocal
 
 # 各 Agent 的工具白名单（工具实现随里程碑陆续注册；未注册的 key 会被 tools_for 安全忽略）
 AGENT_TOOL_KEYS: dict[str, list[str]] = {
@@ -100,8 +102,10 @@ def seed_agent_defs(db: Session) -> None:
         )
 
 
-def init_db(db: Session) -> None:
+def init_db() -> None:
     """幂等初始化：所有子函数都以「不存在才插入」为前提。"""
+    db = SessionLocal()
+    init_tables()
     seed_risk_config(db)
     seed_ranking_sources(db)
     seed_agent_defs(db)

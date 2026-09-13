@@ -28,8 +28,7 @@ async def lifespan(app: FastAPI):
     ws_manager.bind_loop(asyncio.get_running_loop())
     # 数据库不可用时（如尚未启动/建表）不阻断进程，便于先启动看健康检查
     try:
-        with SessionLocal() as db:
-            init_db(db)
+        init_db()
         logger.info("database initialized")
     except Exception as exc:  # noqa: BLE001
         logger.warning("database unavailable at startup; continue booting", error=str(exc))
@@ -126,7 +125,7 @@ app = create_app()
 
 def run() -> None:  # pragma: no cover - 本地启动入口
     import uvicorn
-    init_tables()
+    init_db()
     s = get_settings()
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=s.debug)
 

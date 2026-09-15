@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import (
-    BigInteger,
+    Integer,
     Boolean,
     DateTime,
     Index,
@@ -27,7 +27,7 @@ class RankingSource(Base):
 
     __tablename__ = "ranking_sources"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     key: Mapped[str] = mapped_column(String(48), unique=True, nullable=False, server_default=text("''"))
     name: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
     page_max: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("20"))
@@ -40,7 +40,7 @@ class Account(TimestampMixin, Base):
 
     __tablename__ = "accounts"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     xhs_user_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, server_default=text("''"))
     nickname: Mapped[str | None] = mapped_column(String(128), server_default=text("''"))
     fans: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))
@@ -55,8 +55,8 @@ class AccountMetric(Base):
 
     __tablename__ = "account_metrics"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    account_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    account_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False, server_default=text("0"))
     trade_score: Mapped[float | None] = mapped_column(Numeric(4, 2), server_default=text("0"))
     conv_score: Mapped[float | None] = mapped_column(Numeric(4, 2), server_default=text("0"))
     read_score: Mapped[float | None] = mapped_column(Numeric(4, 2), server_default=text("0"))
@@ -72,12 +72,12 @@ class Ranking(Base):
 
     __tablename__ = "rankings"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     source: Mapped[str] = mapped_column(String(48), nullable=False, server_default=text("''"))
     page: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     rank: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     note_title: Mapped[str | None] = mapped_column(String(255), server_default=text("''"))
-    account_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    account_id: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
     read_low: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))
     read_high: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))
     click_rate: Mapped[float | None] = mapped_column(Numeric(5, 2), server_default=text("0"))
@@ -100,10 +100,10 @@ class Product(TimestampMixin, Base):
 
     __tablename__ = "products"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     xhs_id: Mapped[str | None] = mapped_column(String(64), server_default=text("''"))
-    account_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
-    direction_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    account_id: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
+    direction_id: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
     title: Mapped[str | None] = mapped_column(String(255), server_default=text("''"))
     price_cents: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))
     sales: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))
@@ -126,8 +126,8 @@ class Product(TimestampMixin, Base):
 class ProductImage(Base):
     __tablename__ = "product_images"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     url: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     local_path: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
     seq: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
@@ -146,13 +146,13 @@ class Direction(Base):
 
     __tablename__ = "directions"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(128), unique=True, nullable=False, server_default=text("''"))
     category: Mapped[str | None] = mapped_column(String(64), server_default=text("''"))
     form: Mapped[str | None] = mapped_column(String(32), server_default=text("''"))
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'观察中'"))
     evidence: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
-    picked_product_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    picked_product_id: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
 
 
 class DirectionAccount(Base):
@@ -160,9 +160,9 @@ class DirectionAccount(Base):
 
     __tablename__ = "direction_accounts"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    direction_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
-    account_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    direction_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    account_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     price_low: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))
     price_high: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))
     max_sales: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))

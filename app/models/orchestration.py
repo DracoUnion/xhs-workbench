@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     UUID,
-    BigInteger,
+    Integer,
     Boolean,
     DateTime,
     Index,
@@ -29,7 +29,7 @@ class AgentDef(TimestampMixin, Base):
 
     __tablename__ = "agent_defs"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, server_default=text("''"))
     name: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
     system_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
@@ -45,12 +45,12 @@ class AgentRun(TimestampMixin, Base):
 
     __tablename__ = "agent_runs"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     run_uuid: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True), unique=True, nullable=False, default=uuid4
     )
     agent_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
-    product_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    product_id: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, server_default=text("'pending'")
     )  # pending|running|blocked|done|failed|killed
@@ -74,13 +74,13 @@ class ReviewPoint(Base):
 
     __tablename__ = "review_points"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    run_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     agent_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
     rtype: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("''"))
     payload: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
     action: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'pending'"))
-    action_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    action_by: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
     action_note: Mapped[str | None] = mapped_column(Text, nullable=True, server_default=text("''"))
     acted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -92,8 +92,8 @@ class Dedup(Base):
 
     __tablename__ = "dedup"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     scope: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("''"))
     fingerprint: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
     first_seen: Mapped[datetime] = mapped_column(

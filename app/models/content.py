@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import (
-    BigInteger,
+    Integer,
     Boolean,
     DateTime,
     Index,
@@ -24,8 +24,8 @@ from app.core.database import Base
 class Keyword(TimestampMixin, Base):
     __tablename__ = "keywords"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     word: Mapped[str] = mapped_column(String(128), nullable=False, server_default=text("''"))
     is_core: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     a_to_z: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
@@ -44,9 +44,9 @@ class Note(TimestampMixin, Base):
 
     __tablename__ = "notes"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
-    keyword_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    keyword_id: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
     note_id: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
     title: Mapped[str | None] = mapped_column(String(255), server_default=text("''"))
     body: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
@@ -74,8 +74,8 @@ class Note(TimestampMixin, Base):
 class NoteImage(Base):
     __tablename__ = "note_images"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    note_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    note_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     url: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     local_path: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
     seq: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
@@ -86,8 +86,8 @@ class NoteImage(Base):
 class NoteFrame(Base):
     __tablename__ = "note_frames"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    note_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    note_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     ts_sec: Mapped[int | None] = mapped_column(Integer, server_default=text("0"))
     local_path: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
 
@@ -95,8 +95,8 @@ class NoteFrame(Base):
 class Transcript(Base):
     __tablename__ = "transcripts"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    note_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    note_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False, server_default=text("0"))
     engine: Mapped[str] = mapped_column(String(32), nullable=False, server_default=text("''"))
     content_text: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     meta_data: Mapped[dict | None] = mapped_column(JSON, server_default=text("'{}'"))
@@ -107,8 +107,8 @@ class NoteAnalysis(Base):
 
     __tablename__ = "note_analyses"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    note_id: Mapped[int] = mapped_column(BigInteger, unique=True, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    note_id: Mapped[int] = mapped_column(Integer, unique=True, nullable=False, server_default=text("0"))
     title_formula: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
     structure: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
     hook_type: Mapped[str | None] = mapped_column(String(16), server_default=text("''"))
@@ -125,8 +125,8 @@ class Template(TimestampMixin, Base):
 
     __tablename__ = "templates"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     cluster_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
     supported_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     draft_md: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
@@ -144,8 +144,8 @@ class Skill(TimestampMixin, Base):
 
     __tablename__ = "skills"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    product_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     name: Mapped[str] = mapped_column(String(128), nullable=False, server_default=text("''"))
     md: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     files_whitelist: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
@@ -162,11 +162,11 @@ class Skill(TimestampMixin, Base):
 class SkillVersion(Base):
     __tablename__ = "skill_versions"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    skill_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    skill_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     md: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
-    created_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))
+    created_by: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
     note: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
@@ -180,8 +180,8 @@ class ContentPackage(TimestampMixin, Base):
 
     __tablename__ = "content_packages"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    skill_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    skill_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     seq: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     title: Mapped[str | None] = mapped_column(String(255), server_default=text("''"))
     body: Mapped[str | None] = mapped_column(Text, server_default=text("''"))
@@ -202,13 +202,13 @@ class Review(Base):
 
     __tablename__ = "reviews"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    content_package_id: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    content_package_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     reviewer_agent_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
     verdict: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("''"))
     issues: Mapped[list | None] = mapped_column(JSON, server_default=text("'[]'"))  # [{type,message,ref}]
     rounds: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
-    created_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True, server_default=text("0"))  # 人工审核记录
+    created_by: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))  # 人工审核记录
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

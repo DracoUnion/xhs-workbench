@@ -29,6 +29,7 @@ engine = create_engine(
     pool_pre_ping=True,
     pool_size=5,
     max_overflow=10,
+    echo=True,
     # 数据库未启动时快速失败，避免启动流程被连接超时阻塞
     # connect_args={"connect_timeout": 3},
 )

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Integer, String, Text, func, text
+from sqlalchemy import JSON, Integer, Boolean, DateTime, Integer, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.mixins import TimestampMixin
@@ -13,7 +13,7 @@ from app.core.database import Base
 class User(TimestampMixin, Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, server_default=text("''"))
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False, server_default=text("''"))
     role: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'operator'"))
@@ -31,7 +31,7 @@ class RiskConfig(Base):
 
     __tablename__ = "risk_config"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     scope: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, server_default=text("''"))
     min_delay_s: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("60"))
     max_delay_s: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("90"))

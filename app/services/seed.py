@@ -106,8 +106,8 @@ def init_db() -> None:
     """幂等初始化：所有子函数都以「不存在才插入」为前提。"""
     db = SessionLocal()
     init_tables()
-    # seed_risk_config(db)
-    # seed_ranking_sources(db)
-    # seed_agent_defs(db)
+    seed_risk_config(db)
+    seed_ranking_sources(db)
+    seed_agent_defs(db)
     ensure_admin(db)
     db.commit()

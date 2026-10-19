@@ -1,22 +1,16 @@
-"""只读 SQL 视图：为前端中「后端尚未实现」的页面提供 SELECT 接口。
+"""只读查询服务：为桌面界面提供 SELECT 数据，返回 JSON 兼容 dict。
 
-这些端点仅做查询（不产生任何写操作），返回的 JSON 形状与 frontend/src/types 完全一致，
-使桌面端立即可浏览数据库中已存在的表（keywords/notes/products/accounts/...）。
-需要真实业务逻辑的动作（采集、评分、生成、转 Skill、试跑等）保持「待接入」。
-
-挂载方式见 server.build_app()：该 router 先并入 app.api.v1.router.api_router，
-再由 app.main.create_app() 一并复制到最终 app（保证不被末尾 catch-all 404 遮蔽）。
+源自原 src/readonly.py（FastAPI 路由）。移除 HTTP 层后改为纯函数，
+由 src/client.py 在独立 Session 中直接调用。返回形状与前端类型一致。
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
 from app.models import (
     Account,
     AccountMetric,
@@ -39,9 +33,6 @@ from app.models import (
 from app.models.content import NoteImage
 from app.services.runs import list_runs
 
-router = APIRouter(tags=["src-readonly"])
-
-
 # ---------- 序列化辅助 ----------
 
 
@@ -54,7 +45,7 @@ def _dt(value: datetime | None) -> str | None:
 
 
 def _num(value: Any) -> Any:
-    """Numeric/Decimal → float|int；避免 JSON 序列化 Decimal 报错。"""
+    """Numeric/Decimal → float|int；避免序列化 Decimal 报错。"""
     if value is None:
         return None
     if hasattr(value, "float"):
@@ -292,8 +283,7 @@ def risk_to_dict(r: RiskConfig) -> dict[str, Any]:
 # ---------- 工作台 ----------
 
 
-@router.get("/dashboard/summary")
-def dashboard_summary(db: Session = Depends(get_db)) -> dict:
+def dashboard_summary(db: Session) -> dict:
     """与 frontend types.api.DashboardSummary 对齐。"""
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     accounts_today = db.scalar(
@@ -335,25 +325,18 @@ def dashboard_summary(db: Session = Depends(get_db)) -> dict:
 # ---------- 需求发现 ----------
 
 
-@router.get("/ranking-sources")
-def ranking_sources(db: Session = Depends(get_db)) -> dict:
+def ranking_sources(db: Session) -> dict:
     rows = db.scalars(select(RankingSource).order_by(RankingSource.id)).all()
     return {"data": [source_to_dict(s) for s in rows]}
 
 
-@router.get("/accounts")
-def list_accounts(
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=50, ge=1, le=100),
-    db: Session = Depends(get_db),
-) -> dict:
+def list_accounts(db: Session, page: int = 1, page_size: int = 50) -> dict:
     stmt = select(Account)
     rows, total = _paged(db, Account, stmt, page, page_size)
     return {"data": [account_to_dict(a) for a in rows], "meta": {"total": total, "page": page, "page_size": page_size}}
 
 
-@router.get("/accounts/{account_id}")
-def account_detail(account_id: int, db: Session = Depends(get_db)) -> dict:
+def account_detail(db: Session, account_id: int) -> dict:
     a = db.get(Account, account_id)
     if a is None:
         return {"data": None}
@@ -361,13 +344,8 @@ def account_detail(account_id: int, db: Session = Depends(get_db)) -> dict:
     return {"data": account_to_dict(a, m)}
 
 
-@router.get("/products")
 def list_products(
-    account_id: int | None = None,
-    role: str | None = None,
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=50, ge=1, le=100),
-    db: Session = Depends(get_db),
+    db: Session, account_id: int | None = None, role: str | None = None, page: int = 1, page_size: int = 50
 ) -> dict:
     stmt = select(Product)
     if account_id is not None:
@@ -378,8 +356,7 @@ def list_products(
     return {"data": [product_to_dict(p) for p in rows], "meta": {"total": total, "page": page, "page_size": page_size}}
 
 
-@router.get("/products/{product_id}")
-def product_detail(product_id: int, db: Session = Depends(get_db)) -> dict:
+def product_detail(db: Session, product_id: int) -> dict:
     p = db.get(Product, product_id)
     if p is None:
         return {"data": None}
@@ -387,26 +364,22 @@ def product_detail(product_id: int, db: Session = Depends(get_db)) -> dict:
     return {"data": product_to_dict(p, list(images))}
 
 
-@router.get("/products/{product_id}/images")
-def product_images(product_id: int, db: Session = Depends(get_db)) -> dict:
+def product_images(db: Session, product_id: int) -> dict:
     rows = db.scalars(select(ProductImage).where(ProductImage.product_id == product_id)).all()
     return {"data": [image_to_dict(i) for i in rows]}
 
 
-@router.get("/products/{product_id}/materials")
-def product_materials(product_id: int, db: Session = Depends(get_db)) -> dict:
+def product_materials(db: Session, product_id: int) -> dict:
     rows = db.scalars(select(Material).where(Material.product_id == product_id)).all()
     return {"data": [material_to_dict(m) for m in rows]}
 
 
-@router.get("/products/{product_id}/design")
-def product_design(product_id: int, db: Session = Depends(get_db)) -> dict:
+def product_design(db: Session, product_id: int) -> dict:
     d = db.scalar(select(DesignDoc).where(DesignDoc.product_id == product_id))
     return {"data": design_to_dict(d) if d else {}}
 
 
-@router.get("/directions")
-def list_directions(db: Session = Depends(get_db)) -> dict:
+def list_directions(db: Session) -> dict:
     rows = db.scalars(select(Direction).order_by(Direction.id)).all()
     return {"data": [direction_to_dict(d) for d in rows]}
 
@@ -414,8 +387,7 @@ def list_directions(db: Session = Depends(get_db)) -> dict:
 # ---------- 内容获客 ----------
 
 
-@router.get("/keywords")
-def list_keywords(product_id: int | None = None, db: Session = Depends(get_db)) -> dict:
+def list_keywords(db: Session, product_id: int | None = None) -> dict:
     stmt = select(Keyword)
     if product_id is not None:
         stmt = stmt.where(Keyword.product_id == product_id)
@@ -423,13 +395,7 @@ def list_keywords(product_id: int | None = None, db: Session = Depends(get_db)) 
     return {"data": [keyword_to_dict(k) for k in rows]}
 
 
-@router.get("/notes")
-def list_notes(
-    product_id: int | None = None,
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=50, ge=1, le=100),
-    db: Session = Depends(get_db),
-) -> dict:
+def list_notes(db: Session, product_id: int | None = None, page: int = 1, page_size: int = 50) -> dict:
     stmt = select(Note)
     if product_id is not None:
         stmt = stmt.where(Note.product_id == product_id)
@@ -437,8 +403,7 @@ def list_notes(
     return {"data": [note_to_dict(n) for n in rows], "meta": {"total": total, "page": page, "page_size": page_size}}
 
 
-@router.get("/notes/{note_id}")
-def note_detail(note_id: int, db: Session = Depends(get_db)) -> dict:
+def note_detail(db: Session, note_id: int) -> dict:
     n = db.get(Note, note_id)
     if n is None:
         return {"data": None}
@@ -446,14 +411,12 @@ def note_detail(note_id: int, db: Session = Depends(get_db)) -> dict:
     return {"data": {**note_to_dict(n), "images": [note_image_to_dict(i) for i in images]}}
 
 
-@router.get("/notes/{note_id}/analysis")
-def note_analysis(note_id: int, db: Session = Depends(get_db)) -> dict:
+def note_analysis(db: Session, note_id: int) -> dict:
     a = db.scalar(select(NoteAnalysis).where(NoteAnalysis.note_id == note_id))
     return {"data": analysis_to_dict(a) if a else {}}
 
 
-@router.get("/templates")
-def list_templates(product_id: int | None = None, db: Session = Depends(get_db)) -> dict:
+def list_templates(db: Session, product_id: int | None = None) -> dict:
     stmt = select(Template)
     if product_id is not None:
         stmt = stmt.where(Template.product_id == product_id)
@@ -461,24 +424,17 @@ def list_templates(product_id: int | None = None, db: Session = Depends(get_db))
     return {"data": [template_to_dict(t) for t in rows]}
 
 
-@router.get("/skills")
-def list_skills(db: Session = Depends(get_db)) -> dict:
+def list_skills(db: Session) -> dict:
     rows = db.scalars(select(Skill).order_by(Skill.id)).all()
     return {"data": [skill_to_dict(s) for s in rows]}
 
 
-@router.get("/skills/{skill_id}")
-def skill_detail(skill_id: int, db: Session = Depends(get_db)) -> dict:
+def skill_detail(db: Session, skill_id: int) -> dict:
     s = db.get(Skill, skill_id)
     return {"data": skill_to_dict(s) if s else None}
 
 
-@router.get("/contents")
-def list_contents(
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=50, ge=1, le=100),
-    db: Session = Depends(get_db),
-) -> dict:
+def list_contents(db: Session, page: int = 1, page_size: int = 50) -> dict:
     stmt = select(ContentPackage)
     rows, total = _paged(db, ContentPackage, stmt, page, page_size)
     return {"data": [package_to_dict(c) for c in rows], "meta": {"total": total, "page": page, "page_size": page_size}}
@@ -487,13 +443,11 @@ def list_contents(
 # ---------- 设置 ----------
 
 
-@router.get("/agent-defs")
-def agent_defs(db: Session = Depends(get_db)) -> dict:
+def agent_defs(db: Session) -> dict:
     rows = db.scalars(select(AgentDef).order_by(AgentDef.id)).all()
     return {"data": [agent_def_to_dict(a) for a in rows]}
 
 
-@router.get("/risk-config")
-def risk_config(db: Session = Depends(get_db)) -> dict:
+def risk_config(db: Session) -> dict:
     rows = db.scalars(select(RiskConfig).order_by(RiskConfig.id)).all()
     return {"data": [risk_to_dict(r) for r in rows]}

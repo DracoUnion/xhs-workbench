@@ -1,44 +1,41 @@
-"""WebSocket 连接管理：把运行事件推送给前端任务中心。单机设计，进程内广播。"""
+"""进程内事件广播：把运行事件分发给已注册的 sink（Qt 界面等）。
+
+替代原 WebSocket 连接管理。单机桌面应用不再需要 HTTP/WS 传输，
+广播同步执行；sink 侧（src/ws_client.py）负责跨线程投递为 Qt 信号。
+"""
 from __future__ import annotations
 
-import asyncio
+import threading
+from collections.abc import Callable
 from typing import Any
-
-from fastapi import WebSocket
 
 
 class ConnectionManager:
+    """向所有已注册 sink 同步派发运行事件。线程安全。"""
+
     def __init__(self) -> None:
-        self.active: set[WebSocket] = set()
-        self._loop: asyncio.AbstractEventLoop | None = None
+        self._sinks: list[Callable[[dict[str, Any]], None]] = []
+        self._lock = threading.Lock()
 
-    def bind_loop(self, loop: asyncio.AbstractEventLoop | None) -> None:
-        """在应用启动时绑定主事件循环，供跨线程 broadcast_sync 派发。"""
-        self._loop = loop
+    def add_sink(self, sink: Callable[[dict[str, Any]], None]) -> None:
+        with self._lock:
+            if sink not in self._sinks:
+                self._sinks.append(sink)
 
-    async def connect(self, websocket: WebSocket) -> None:
-        await websocket.accept()
-        self.active.add(websocket)
-
-    async def disconnect(self, websocket: WebSocket) -> None:
-        self.active.discard(websocket)
-
-    async def broadcast(self, event: dict[str, Any]) -> None:
-        for ws in list(self.active):
-            try:
-                await ws.send_json(event)
-            except Exception:  # noqa: BLE001  单条连接失败不影响其余
-                self.active.discard(ws)
+    def remove_sink(self, sink: Callable[[dict[str, Any]], None]) -> None:
+        with self._lock:
+            if sink in self._sinks:
+                self._sinks.remove(sink)
 
     def broadcast_sync(self, event: dict[str, Any]) -> None:
-        """给行工作线程（Celery/inline）用的同步派发；未绑定主循环时静默丢弃。"""
-        loop = self._loop
-        if loop is None:
-            return
-        try:
-            asyncio.run_coroutine_threadsafe(self.broadcast(event), loop)
-        except RuntimeError:  # loop 已关闭
-            pass
+        """供 inline/Celery 工作线程同步派发；单个 sink 失败不影响其余。"""
+        with self._lock:
+            sinks = list(self._sinks)
+        for sink in sinks:
+            try:
+                sink(event)
+            except Exception:  # noqa: BLE001
+                pass
 
 
 ws_manager = ConnectionManager()

@@ -1,78 +1,48 @@
-"""任务实时事件客户端：后台线程连接 /ws/tasks，通过 Qt 信号转发事件到 UI。
+"""任务实时事件桥：订阅进程内广播并转发为 Qt 信号。
 
-对齐 frontend/src/hooks/useTaskWebSocket.ts 的语义：
-- 携带 access JWT（query token）
-- 断线指数退避重连（1s*2^n，上限 30s）
-- 收到 JSON 帧 → event_ready(dict)
+桌面版不再连接 WebSocket。后端运行线程调用 ws_manager.broadcast_sync，
+本对象将事件转成 Qt 信号，沿用原页面的 connected/event_ready 接口。
 """
 from __future__ import annotations
 
-import json
-import logging
-import threading
-import time
 from typing import Any
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QObject, Signal
 
-logger = logging.getLogger("src.ws")
+from app.core.ws_manager import ws_manager
 
 
-class TaskEventClient(QThread):
-    connected = Signal(bool)   # True=已连接 / False=断开
-    event_ready = Signal(dict)  # 原始 {"type":..., "data":...}
+class TaskEventClient(QObject):
+    connected = Signal(bool)
+    event_ready = Signal(dict)
 
-    def __init__(self, auth: Any) -> None:
+    def __init__(self, auth: Any = None) -> None:
         super().__init__()
+        # 保留旧构造参数，桌面直连模式不再读取 token。
         self._auth = auth
-        self._stop = threading.Event()
-        self._max_backoff = 30.0
+        self._subscribed = False
+
+    def start(self) -> None:
+        """注册进程内事件 sink；保留旧 QThread.start() 调用语义。
+
+        connected 信号由界面自行驱动（进入主界面/登出），此处不主动置位，
+        避免在主界面构建完成前触发无关 UI 更新。
+        """
+        if self._subscribed:
+            return
+        ws_manager.add_sink(self._on_event)
+        self._subscribed = True
+
+    def _on_event(self, event: dict) -> None:
+        # 广播可能来自 inline worker；Qt 自动将跨线程连接排队到 GUI 线程。
+        self.event_ready.emit(event)
 
     def stop(self) -> None:
-        self._stop.set()
-
-    def _ws_url(self) -> str:
-        from server import server_ws_url
-
-        token = self._auth.access_token or ""
-        return f"{server_ws_url()}?token={token}"
-
-    def run(self) -> None:  # noqa: N802 - Qt 虚方法命名
-        from websockets.sync.client import connect
-        from websockets.exceptions import WebSocketException
-
-        retries = 0
-        while not self._stop.is_set():
-            token = self._auth.access_token
-            if not token:
-                retries = 0
-                self._stop.wait(1.0)
-                continue
-
-            try:
-                with connect(self._ws_url(), close_timeout=3) as ws:
-                    retries = 0
-                    self.connected.emit(True)
-                    for raw in ws:
-                        if self._stop.is_set():
-                            break
-                        try:
-                            event: dict = json.loads(raw)
-                        except (json.JSONDecodeError, TypeError):
-                            continue
-                        self.event_ready.emit(event)
-            except (WebSocketException, OSError, RuntimeError) as exc:
-                logger.info("任务 WS 断开: %s", exc)
-                self.connected.emit(False)
-            except Exception as exc:  # noqa: BLE001 - 连接层杂项错误统一退避
-                logger.info("任务 WS 异常: %s", exc)
-                self.connected.emit(False)
-
-            if self._stop.is_set():
-                break
-            delay = min(1.0 * (2 ** retries), self._max_backoff)
-            retries += 1
-            logger.info("任务 WS %ss 后重连", delay)
-            self._stop.wait(delay)
-
+        if self._subscribed:
+            ws_manager.remove_sink(self._on_event)
+            self._subscribed = False
         self.connected.emit(False)
+
+    def wait(self, _msecs: int) -> bool:
+        """兼容旧 QThread.wait()；直连 sink 无需等待后台线程。"""
+        return True

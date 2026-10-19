@@ -288,7 +288,4 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:  # noqa: N802
         self.ws.stop()
         self.ws.wait(3000)
-        from src import server as srv
-
-        srv.stop_server()
         super().closeEvent(event)

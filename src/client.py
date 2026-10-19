@@ -1,18 +1,30 @@
-"""HTTP 客户端：对齐 frontend/src/api/http.ts 的 axios 层。
+"""后端直连客户端：PyQt 直接调用 app.services 的服务函数，替代原 HTTP 层。
 
-- 统一透传 Bearer token（来自 AuthStore）
-- 错误响应 {"error":{code,message,details}} → 抛 ApiError
-- 响应 {"data":...} 自动解包；分页接口额外返回 meta
-- 服务不可用（连接被拒）→ 抛 CONNECTION_ERROR
+- 每次调用在独立 SQLAlchemy Session 中执行，用后即关
+- 后端异常（AppError）→ ApiError，保持与旧 HTTP 层一致的 code/message/details
+- 登录态保存在 AuthStore；受保护操作基于当前用户做鉴权（替代原 JWT 依赖）
 """
 from __future__ import annotations
 
-import json
 from typing import Any
 
-import httpx
+from sqlalchemy.orm import Session
 
-import server as server
+from app.core.database import SessionLocal
+from app.core.exceptions import AppError
+from app.services import readonly
+from app.services.auth import authenticate, issue_tokens
+from app.services.runs import (
+    abort_run,
+    act_review_point,
+    get_run,
+    list_review_points,
+    list_runs,
+    resume_run,
+    run_to_dict,
+    submit_run,
+)
+from app.adapters.xhs import clear_cookies, cookie_status, set_cookie_string
 
 TOKEN_INVALID_CODES = {"AUTH_REQUIRED", "TOKEN_INVALID", "PERMISSION_DENIED"}
 
@@ -36,7 +48,7 @@ class ApiError(Exception):
 
 
 class AuthStore:
-    """内存会话：tokens + 当前用户。token 过期时通过 on_auth_failed() 通知 UI 回登录页。"""
+    """内存登录态：当前用户 + 兼容字段。清空时通过 on_auth_failed() 通知 UI 回登录页。"""
 
     def __init__(self) -> None:
         self.access_token: str | None = None
@@ -67,97 +79,58 @@ class AuthStore:
 
 
 class ApiClient:
+    """PyQt → 后端服务的直连接口，方法签名与原 HTTP 客户端对齐（页面零改动）。"""
+
     def __init__(self, auth: AuthStore) -> None:
         self.auth = auth
-        self._http: httpx.Client | None = None
-        self._timeout = 30.0
 
-    def _client(self) -> httpx.Client:
-        if self._http is None:
-            base = server.server_base_url() + "/api/v1"
-            self._http = httpx.Client(base_url=base, timeout=self._timeout)
-        return self._http
+    # ---------- 内部工具 ----------
 
-    def _headers(self) -> dict[str, str]:
-        if self.auth.access_token:
-            return {"Authorization": f"Bearer {self.auth.access_token}"}
-        return {}
+    def _require_user(self) -> dict:
+        user = self.auth.user
+        if user is None:
+            raise ApiError("AUTH_REQUIRED", "未登录")
+        return user
 
-    def _handle_auth_failure(self, code: str) -> None:
-        if code in TOKEN_INVALID_CODES and self.auth.is_logged_in():
-            self.auth.clear()
+    def _require_admin(self) -> dict:
+        user = self._require_user()
+        if user.get("role") != "admin":
+            raise ApiError("PERMISSION_DENIED", "需要管理员权限")
+        return user
 
-    def request(self, method: str, path: str, *, params: dict | None = None, json_body: Any = None) -> dict:
-        """发请求；错误信封 → 抛 ApiError；有 data 则解包，否则原样返回 body。"""
-        headers = self._headers()
+    def _call(self, fn, *args: Any, **kwargs: Any) -> Any:
+        """在独立 Session 中执行服务函数；AppError → ApiError。"""
+        db: Session = SessionLocal()
         try:
-            resp = self._client().request(method, path, params=params, json=json_body, headers=headers)
-        except httpx.TransportError as exc:
-            raise ApiError("CONNECTION_ERROR", f"无法连接内嵌服务：{exc}")
-        body: dict = {}
-        if resp.content:
-            try:
-                body = resp.json()
-            except json.JSONDecodeError:
-                body = {}
-        if isinstance(body, dict) and "error" in body:
-            err = body["error"]
-            code = (err or {}).get("code", "HTTP_ERROR")
-            self._handle_auth_failure(code)
-            raise ApiError(code, (err or {}).get("message", resp.text), (err or {}).get("details"), resp.status_code)
-        if not resp.is_success and isinstance(body, dict) and "data" not in body:
-            self._handle_auth_failure("HTTP_ERROR")
-            raise ApiError(f"HTTP_{resp.status_code}", resp.text or f"请求失败 ({resp.status_code})", None, resp.status_code)
-        return body.get("data", body) if isinstance(body, dict) else {}
-
-    def request_page(self, method: str, path: str, *, params: dict | None = None, json_body: Any = None) -> dict:
-        """分页接口：返回 {data, meta} 原始 body。"""
-        headers = self._headers()
-        try:
-            resp = self._client().request(method, path, params=params, json=json_body, headers=headers)
-        except httpx.TransportError as exc:
-            raise ApiError("CONNECTION_ERROR", f"无法连接内嵌服务：{exc}")
-        body: dict = {}
-        if resp.content:
-            try:
-                body = resp.json()
-            except json.JSONDecodeError:
-                body = {}
-        if isinstance(body, dict) and "error" in body:
-            err = body["error"]
-            code = (err or {}).get("code", "HTTP_ERROR")
-            self._handle_auth_failure(code)
-            raise ApiError(code, (err or {}).get("message", resp.text), (err or {}).get("details"), resp.status_code)
-        return body
-
-    def get(self, path: str, params: dict | None = None):
-        return self.request("GET", path, params=params)
-
-    def get_page(self, path: str, params: dict | None = None) -> tuple[list, dict]:
-        body = self.request_page("GET", path, params=params)
-        return body.get("data", []), body.get("meta", {})
-
-    def post(self, path: str, body: Any = None):
-        return self.request("POST", path, json_body=body)
-
-    def put(self, path: str, body: Any = None):
-        return self.request("PUT", path, json_body=body)
-
-    def patch(self, path: str, body: Any = None):
-        return self.request("PATCH", path, json_body=body)
-
-    def delete(self, path: str):
-        return self.request("DELETE", path)
+            return fn(db, *args, **kwargs)
+        except AppError as exc:
+            if exc.code in TOKEN_INVALID_CODES and self.auth.is_logged_in():
+                self.auth.clear()
+            raise ApiError(exc.code, exc.message, exc.details) from exc
+        finally:
+            db.close()
 
     # ---------- 认证 ----------
 
     def login(self, username: str, password: str) -> dict:
-        body = self.post("/auth/login", {"username": username, "password": password})
-        self.auth.access_token = body["access_token"]
-        self.auth.refresh_token = body.get("refresh_token")
-        user = self.request("GET", "/auth/me")
-        self.auth.user = user
-        return {"tokens": body, "user": user}
+        db: Session = SessionLocal()
+        try:
+            user = authenticate(db, username, password)
+            tokens = issue_tokens(db, user)
+            user_dict = {
+                "id": user.id,
+                "username": user.username,
+                "role": user.role,
+                "is_active": user.is_active,
+            }
+        except AppError as exc:
+            raise ApiError(exc.code, exc.message, exc.details) from exc
+        finally:
+            db.close()
+        self.auth.access_token = tokens["access_token"]
+        self.auth.refresh_token = tokens["refresh_token"]
+        self.auth.user = user_dict
+        return {"tokens": tokens, "user": user_dict}
 
     # ---------- 任务中心 ----------
 
@@ -169,128 +142,143 @@ class ApiClient:
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list, dict]:
-        params: dict = {"page": page, "page_size": page_size}
-        if status:
-            params["status"] = status
-        if agent_key:
-            params["agent_key"] = agent_key
-        if product_id is not None:
-            params["product_id"] = product_id
-        return self.get_page("/tasks", params)
+        self._require_user()
+        items, total = self._call(
+            list_runs,
+            status=status,
+            agent_key=agent_key,
+            product_id=product_id,
+            page=page,
+            page_size=page_size,
+        )
+        return items, {"total": total, "page": page, "page_size": page_size}
 
     def get_task(self, run_id: int) -> dict:
-        return self.get(f"/tasks/{run_id}")
+        self._require_user()
+
+        def _load(db: Session) -> dict:
+            return run_to_dict(get_run(db, run_id))
+
+        return self._call(_load)
 
     def get_task_messages(self, run_id: int) -> tuple[list, list]:
-        # 该端点响应为 {"data": messages, "tool_calls": [...]}（非标准平衡信封），用 request_page 保留两个字段。
-        body = self.request_page("GET", f"/tasks/{run_id}/messages")
-        return body.get("data", []), body.get("tool_calls", [])
+        self._require_user()
+
+        def _load(db: Session) -> tuple[list, list]:
+            run = get_run(db, run_id)
+            return run.messages, run.tool_calls
+
+        return self._call(_load)
 
     def create_task(self, agent_key: str, product_id: int | None = None, context: str | None = None) -> dict:
-        body: dict = {"agent_key": agent_key}
-        if product_id is not None:
-            body["product_id"] = product_id
-        if context:
-            body["context"] = context
-        return self.post("/tasks", body)
+        self._require_user()
+        return self._call(submit_run, agent_key, product_id=product_id, context=context)
 
     def resume_task(self, run_id: int) -> dict:
-        return self.post(f"/tasks/{run_id}/resume")
+        self._require_user()
+        mode = self._call(resume_run, run_id)
+        return {"run_id": run_id, "mode": mode}
 
     def abort_task(self, run_id: int) -> dict:
-        return self.post(f"/tasks/{run_id}/abort")
+        self._require_user()
+        return self._call(abort_run, run_id)
 
     def list_review_points(self, pending_only: bool = True) -> list:
-        return self.get("/review-points", {"pending_only": "true" if pending_only else "false"})
+        self._require_user()
+        return self._call(list_review_points, pending_only=pending_only)
 
     def act_review_point(self, point_id: int, action: str, note: str | None = None) -> dict:
-        body: dict = {"action": action}
-        if note:
-            body["note"] = note
-        return self.patch(f"/review-points/{point_id}", body)
+        user = self._require_user()
+        actor_id = int(user.get("id") or 0)
+        return self._call(act_review_point, point_id, action, note, actor_id=actor_id)
 
     # ---------- 小红书 ----------
 
     def xhs_status(self) -> dict:
-        return self.get("/xhs/status")
+        self._require_user()
+        return self._call(lambda db: cookie_status())
 
     def xhs_set_cookies(self, cookie: str) -> dict:
-        return self.put("/xhs/cookies", {"cookie": cookie})
+        self._require_admin()
+        return self._call(lambda db: set_cookie_string(cookie))
 
     def xhs_clear_cookies(self) -> dict:
-        return self.delete("/xhs/cookies")
+        self._require_admin()
+
+        def _clear(db: Session) -> dict:
+            cleared = clear_cookies()
+            return {"cleared": cleared, "status": cookie_status()}
+
+        return self._call(_clear)
 
     # ---------- 只读视图 ----------
 
     def dashboard_summary(self) -> dict:
-        return self.get("/dashboard/summary")
+        body = self._call(readonly.dashboard_summary)
+        return body["data"]
 
     def ranking_sources(self) -> list:
-        return self.get("/ranking-sources")
+        return self._call(readonly.ranking_sources)["data"]
 
     def list_accounts(self, page: int = 1, page_size: int = 50) -> tuple[list, dict]:
-        return self.get_page("/accounts", {"page": page, "page_size": page_size})
+        body = self._call(readonly.list_accounts, page, page_size)
+        return body["data"], body["meta"]
 
     def account_detail(self, account_id: int) -> dict | None:
-        return self.get(f"/accounts/{account_id}")
+        return self._call(readonly.account_detail, account_id)["data"]
 
-    def list_products(self, *, account_id: int | None = None, role: str | None = None, page: int = 1, page_size: int = 50) -> tuple[list, dict]:
-        params: dict = {"page": page, "page_size": page_size}
-        if account_id is not None:
-            params["account_id"] = account_id
-        if role:
-            params["role"] = role
-        return self.get_page("/products", params)
+    def list_products(
+        self, *, account_id: int | None = None, role: str | None = None, page: int = 1, page_size: int = 50
+    ) -> tuple[list, dict]:
+        body = self._call(readonly.list_products, account_id, role, page, page_size)
+        return body["data"], body["meta"]
 
     def product_detail(self, product_id: int) -> dict | None:
-        return self.get(f"/products/{product_id}")
+        return self._call(readonly.product_detail, product_id)["data"]
 
     def product_images(self, product_id: int) -> list:
-        return self.get(f"/products/{product_id}/images")
+        return self._call(readonly.product_images, product_id)["data"]
 
     def product_materials(self, product_id: int) -> list:
-        return self.get(f"/products/{product_id}/materials")
+        return self._call(readonly.product_materials, product_id)["data"]
 
     def product_design(self, product_id: int) -> dict:
-        return self.get(f"/products/{product_id}/design")
+        return self._call(readonly.product_design, product_id)["data"]
 
     def list_directions(self) -> list:
-        return self.get("/directions")
+        return self._call(readonly.list_directions)["data"]
 
     def list_keywords(self, product_id: int | None = None) -> list:
-        params = {"product_id": product_id} if product_id is not None else None
-        return self.get("/keywords", params)
+        return self._call(readonly.list_keywords, product_id)["data"]
 
     def list_notes(self, product_id: int | None = None, page: int = 1, page_size: int = 50) -> tuple[list, dict]:
-        params: dict = {"page": page, "page_size": page_size}
-        if product_id is not None:
-            params["product_id"] = product_id
-        return self.get_page("/notes", params)
+        body = self._call(readonly.list_notes, product_id, page, page_size)
+        return body["data"], body["meta"]
 
     def note_detail(self, note_id: int) -> dict | None:
-        return self.get(f"/notes/{note_id}")
+        return self._call(readonly.note_detail, note_id)["data"]
 
     def note_analysis(self, note_id: int) -> dict:
-        return self.get(f"/notes/{note_id}/analysis")
+        return self._call(readonly.note_analysis, note_id)["data"]
 
     def list_templates(self, product_id: int | None = None) -> list:
-        params = {"product_id": product_id} if product_id is not None else None
-        return self.get("/templates", params)
+        return self._call(readonly.list_templates, product_id)["data"]
 
     def list_skills(self) -> list:
-        return self.get("/skills")
+        return self._call(readonly.list_skills)["data"]
 
     def skill_detail(self, skill_id: int) -> dict | None:
-        return self.get(f"/skills/{skill_id}")
+        return self._call(readonly.skill_detail, skill_id)["data"]
 
     def list_contents(self, page: int = 1, page_size: int = 50) -> tuple[list, dict]:
-        return self.get_page("/contents", {"page": page, "page_size": page_size})
+        body = self._call(readonly.list_contents, page, page_size)
+        return body["data"], body["meta"]
 
     def agent_defs(self) -> list:
-        return self.get("/agent-defs")
+        return self._call(readonly.agent_defs)["data"]
 
     def risk_config(self) -> list:
-        return self.get("/risk-config")
+        return self._call(readonly.risk_config)["data"]
 
 
 client: ApiClient | None = None

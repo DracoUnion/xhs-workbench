@@ -1,5 +1,0 @@
-# 桌面版（standalone/）运行时依赖。
-# 后端 app/ 的依赖（fastapi/sqlalchemy/pydantic/httpx/uvicorn/openai 等）由
-# 仓库根目录的 pyproject.toml 提供，见 README。
-PySide6>=6.6
-websockets>=12

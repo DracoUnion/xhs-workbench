@@ -32,7 +32,7 @@ class TaskEventClient(QThread):
         self._stop.set()
 
     def _ws_url(self) -> str:
-        from src.server import server_ws_url
+        from server import server_ws_url
 
         token = self._auth.access_token or ""
         return f"{server_ws_url()}?token={token}"

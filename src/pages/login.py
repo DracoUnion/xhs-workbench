@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget,
 )
 
-from src.client import ApiError
+from client import ApiError
 
 
 class LoginPage(QWidget):

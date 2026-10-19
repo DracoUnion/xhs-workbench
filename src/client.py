@@ -12,7 +12,7 @@ from typing import Any
 
 import httpx
 
-import src.server as server
+import server as server
 
 TOKEN_INVALID_CODES = {"AUTH_REQUIRED", "TOKEN_INVALID", "PERMISSION_DENIED"}
 

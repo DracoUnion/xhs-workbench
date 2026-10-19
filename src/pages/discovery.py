@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget,
 )
 
-from src.widgets import (
+from widgets import (
     DataTable, DetailBlock, JsonViewer, Notice, Page,
     fmt_dt, fmt_json, fmt_money,
 )

@@ -7,22 +7,22 @@ from PySide6.QtWidgets import (
     QPushButton, QSplitter, QStackedWidget, QVBoxLayout, QWidget,
 )
 
-from src.client import get_client
-from src.pages.content import (
+from client import get_client
+from pages.content import (
     ContentsPage, KeywordsPage, NoteDetailPage, NotesPage, SkillEditorPage,
     SkillsPage, TemplatesPage,
 )
-from src.pages.dashboard import DashboardPage
-from src.pages.discovery import (
+from pages.dashboard import DashboardPage
+from pages.discovery import (
     AccountDetailPage, AccountsPage, DirectionsPage, ProductDetailPage,
     ProductsPage, RankingsPage,
 )
-from src.pages.login import LoginPage
-from src.pages.production import ProductStudioPage, ProductionProductsPage
-from src.pages.settings import SettingsPage
-from src.pages.task_center import TaskCenterPage
-from src.pages.xhs import XhsPage
-from src.ws_client import TaskEventClient
+from pages.login import LoginPage
+from pages.production import ProductStudioPage, ProductionProductsPage
+from pages.settings import SettingsPage
+from pages.task_center import TaskCenterPage
+from pages.xhs import XhsPage
+from ws_client import TaskEventClient
 
 # (导航项文本, 路由 key)
 NAV_ITEMS: list[tuple[str, str]] = [

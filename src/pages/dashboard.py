@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from src.widgets import DataTable, Page, StatCard, StatusTag, fmt_dt
+from widgets import DataTable, Page, StatCard, StatusTag, fmt_dt
 
 STATUS_COLORS = {
     "观察中": "#8c8c8c", "升温": "#cf1322", "已验证": "#389e0d",

@@ -7,8 +7,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.client import ApiError
-from src.widgets import ConfirmDialog, DetailBlock, Page, StatCard
+from client import ApiError
+from widgets import ConfirmDialog, DetailBlock, Page, StatCard
 
 
 class XhsPage(Page):

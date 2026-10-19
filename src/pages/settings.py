@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QLabel, QVBoxLayout
 
-from src.widgets import DataTable, DetailBlock, Page, fmt_dt
+from widgets import DataTable, DetailBlock, Page, fmt_dt
 
 
 class SettingsPage(Page):

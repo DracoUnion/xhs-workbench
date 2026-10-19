@@ -1,6 +1,6 @@
 """内嵌 FastAPI 服务：守护线程中运行 uvicorn，Qt 界面通过 HTTP/WebSocket 访问。
 
-关键点：必须先 import src.bootstrap（已由 __main__ 或 main 完成）。
+关键点：必须先 import bootstrap（已由 __main__ 或 main 完成）。
 readonly_router 将在 create_app() 之前并入 app.api.v1.router.api_router，
 这样 create_app() 复制路由时即包含只读视图，且落在末尾 catch-all 404 之前，
 避免被 Starlette 的顺序匹配遮蔽。
@@ -14,9 +14,9 @@ from typing import Any
 
 import uvicorn
 
-import src.readonly  # noqa: F401  (模块级引入以复用其 router 对象)
+import readonly  # noqa: F401  (模块级引入以复用其 router 对象)
 from app.api.v1.router import api_router
-from src.readonly import router as readonly_router
+from readonly import router as readonly_router
 
 logger = logging.getLogger("src.server")
 

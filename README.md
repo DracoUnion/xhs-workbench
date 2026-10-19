@@ -1,10 +1,11 @@
 # 自媒体 AI 工作台 · 桌面版（PySide6）
 
-单进程 **PySide6 桌面应用**，后端（SQLAlchemy + 任务编排 + 小红书 HTTP API 适配器）整体位于仓库根，
+单进程 **PySide6 桌面应用**，源码按 src-layout 组织在 `src/` 下：
+后端（SQLAlchemy + 任务编排 + 小红书 HTTP API 适配器）与前端同源，
 PyQt 直接调用 `services` 层的服务函数，不再启动 HTTP/WebSocket 服务。
 
 - 数据采集、Agent 任务编排（inline 线程）复用后端原实现；
-- 小红书 xhs-cli 通过 **签名 HTTP API**（`adapters/xhs`）请求，不再依赖 Camoufox 浏览器；
+- 小红书 xhs-cli 通过 **签名 HTTP API**（`src/adapters/xhs`）请求，不再依赖 Camoufox 浏览器；
 - 后端尚未实现的接口（关键词/笔记/商品/账号/方向/Skill/内容包等）以**只读 SQL 视图**呈现，动作执行保留「待接入」。
 
 ## 运行
@@ -17,32 +18,33 @@ pip install -e .
 pip install -r requirements.txt
 
 # 3. 启动
-python main.py
+python -m src        # 或 python src/main.py
 ```
 
 启动后默认登录 `admin / admin123`。
 
-> 桌面版使用**独立的数据库** `data/xhs_workbench.db`（与其他数据库隔离），
+> 桌面版使用**独立的数据库** `src/data/xhs_workbench.db`（与其他数据库隔离），
 > 首次启动由后端 `init_db()` 自动建表与播种（管理员、5 个 Agent 定义、8 个榜单入口、风控参数）。
 
-## 架构
+## 架构（均在 `src/` 下）
 
 ```
 QApplication（主线程）
- ├─ main_window.py      — 侧边导航 + 顶栏 + QStackedWidget
- │    └─ gui/           — 页面（工作台/榜单/账号/商品/内容/任务中心/小红书/设置…）
- ├─ client.py           — 后端直连接口（独立 Session 调用 services，失败转 ApiError）
- ├─ ws_client.py        — 进程内事件桥（widgets/任务中心订阅后端进度广播 → Qt 信号）
- ├─ bootstrap.py        — 启动前置：独立数据库/日志路径/inline 执行器
- └─ adapters/xhs/       — 小红书签名 HTTP 客户端（httpx + xhshow 签名，终端 QR 登录）
+ ├─ main.py           — 入口：确保 src/ 在 sys.path → bootstrap → 建表播种 → QApplication
+ ├─ main_window.py    — 侧边导航 + 顶栏 + QStackedWidget
+ │    └─ gui/         — 页面（工作台/榜单/账号/商品/内容/任务中心/小红书/设置…）
+ ├─ client.py         — 后端直连接口（独立 Session 调用 services，失败转 ApiError）
+ ├─ ws_client.py      — 进程内事件桥（订阅后端进度广播 → Qt 信号）
+ ├─ bootstrap.py      — 启动前置：src/data 独立数据库/日志路径/inline 执行器
+ └─ adapters/xhs/     — 小红书签名 HTTP 客户端（httpx + xhshow 签名，终端 QR 登录）
 ```
 
 关键文件：
 
-| 文件 | 职责 |
+| 文件（src/ 下） | 职责 |
 |---|---|
 | `main.py` | 入口：日志 → 建表播种 → QApplication → MainWindow |
-| `bootstrap.py` | 在导入后端模块前设置环境（`data/` 独立数据库、`RUN_EXECUTOR=inline`） |
+| `bootstrap.py` | 在导入后端模块前设置环境（`src/data/` 独立数据库、`RUN_EXECUTOR=inline`） |
 | `core/` | 配置、数据库引擎/Session、异常、日志、事件广播、安全 |
 | `services/` | 领域服务：认证、Agent 运行编排、只读查询、评分、播种 |
 | `models/` | ORM 模型注册表（discovery/production/content/orchestration/platform） |

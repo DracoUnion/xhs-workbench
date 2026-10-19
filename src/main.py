@@ -2,6 +2,12 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
+
+# 工作台包位于 src/ 下：确保任意入口（python -m src / console script）都能解析。
+_SRC_DIR = Path(__file__).resolve().parent
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
 
 # 必须先设置环境再导入任何后端模块（见 bootstrap 文档说明）。
 import bootstrap  # noqa: F401

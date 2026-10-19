@@ -8,10 +8,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# 工作台包位于仓库根，把根目录加入 sys.path 以顶层导入。
-_ROOT = Path(__file__).resolve().parent.parent
-if str(_ROOT) not in sys.path:
-    sys.path.insert(0, str(_ROOT))
+# 工作台包位于 src/ 下，把 src/ 加入 sys.path 以顶层导入。
+_SRC = Path(__file__).resolve().parent.parent / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 
 def main() -> int:

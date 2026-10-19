@@ -17,6 +17,19 @@ from services.seed import init_db
 logger = get_logger("main")
 
 
+def _auto_login() -> None:
+    """无登录窗口：启动时自动以默认管理员建立内存会话，保证服务鉴权可用。"""
+    from client import get_client
+    from core.config import get_settings
+
+    s = get_settings()
+    try:
+        get_client().login(s.admin_username, s.admin_password)
+        logger.info("auto-login as %s", s.admin_username)
+    except Exception as exc:  # noqa: BLE001 - 会话建立失败不阻断启动
+        logger.warning("auto-login failed; 保护操作将提示未登录", error=str(exc))
+
+
 def run() -> None:
     # 桌面版不再启动 HTTP 服务：PyQt 直接调用 services 层。
     setup_logging()
@@ -24,6 +37,8 @@ def run() -> None:
         init_db()
     except Exception as exc:  # noqa: BLE001 - 数据库不可用时不阻断启动
         logger.warning("database unavailable at startup; continue booting", error=str(exc))
+
+    _auto_login()
 
     from PySide6.QtWidgets import QApplication
 

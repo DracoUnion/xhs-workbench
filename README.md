@@ -21,7 +21,7 @@ pip install -r requirements.txt
 python -m src        # 或 python src/main.py
 ```
 
-启动后默认登录 `admin / admin123`。
+启动后自动以默认管理员 `admin` 建立本地会话，直接进入主界面（无登录窗口）。
 
 > 桌面版使用**独立的数据库** `src/data/xhs_workbench.db`（与其他数据库隔离），
 > 首次启动由后端 `init_db()` 自动建表与播种（管理员、5 个 Agent 定义、8 个榜单入口、风控参数）。
@@ -59,7 +59,7 @@ QApplication（主线程）
 
 | 模块 | 功能 | 状态 |
 |---|---|---|
-| 登录 | 本地用户校验（bcrypt） + 内存会话 | ✅ 完整 |
+| 本地会话 | 启动自动登录默认管理员（bcrypt 校验），无登录窗口 | ✅ 完整 |
 | 任务中心 | 发起/列表/过滤/恢复/终止/消息/审核点 + 进程内事件实时刷新 | ✅ 完整（复用 services/runs） |
 | 小红书 | 登录态查看、Cookie 保存/清除、HTTP 客户端采集工具、终端 QR 登录 | ✅ 完整（adapters/xhs） |
 | 工作台 | 统计卡片 + 方向饼图 + 近期任务 | ✅ 只读视图 |

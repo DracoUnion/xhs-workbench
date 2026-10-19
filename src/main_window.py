@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QMainWindow,
-    QPushButton, QSplitter, QStackedWidget, QVBoxLayout, QWidget,
+    QStackedWidget, QVBoxLayout, QWidget,
 )
 
 from client import get_client
@@ -17,7 +17,6 @@ from gui.discovery import (
     AccountDetailPage, AccountsPage, DirectionsPage, ProductDetailPage,
     ProductsPage, RankingsPage,
 )
-from gui.login import LoginPage
 from gui.production import ProductStudioPage, ProductionProductsPage
 from gui.settings import SettingsPage
 from gui.task_center import TaskCenterPage
@@ -56,44 +55,17 @@ class MainWindow(QMainWindow):
         self._body_layout.setSpacing(0)
         self.setCentralWidget(self._body)
 
-        self._login_widget: QWidget | None = None
-        self._app_widget: QWidget | None = None
-
-        # 登录态监听：auth 被清空（token 失效/登出）时回到登录页
-        self.client.auth.add_listener(self._on_auth_changed)
-
-        self._build_login_page()
-
-        # WebSocket 事件线程
+        # 进程内事件桥
         self.ws = TaskEventClient(self.client.auth)
         self.ws.event_ready.connect(self._on_ws_event)
         self.ws.connected.connect(self._on_ws_connected)
         self.ws.start()
 
-    # ---------- 登录页 ----------
-
-    def _build_login_page(self) -> None:
-        page = LoginPage(self.client, self.client.auth)
-        page.logged_in.connect(self._enter_app)
-        self._login_widget = page
-        self._body_layout.addWidget(page)
-
-    def _enter_app(self) -> None:
-        self._login_widget.hide()
+        # 启动直接进入主界面（登录态由 main.py 在启动时建立）
         self._build_app()
         self._body_layout.addWidget(self._app_widget)
         self._app_widget.show()
         self.ws.connected.emit(True)
-
-    def _on_auth_changed(self) -> None:
-        if self._app_widget is None:
-            return
-        if not self.client.auth.is_logged_in():
-            # 回登录页
-            self._app_widget.hide()
-            self._app_widget = None
-            self._login_widget.show()
-            self.ws.connected.emit(False)
 
     # ---------- 主界面 ----------
 
@@ -137,10 +109,6 @@ class MainWindow(QMainWindow):
         self.user_label = QLabel()
         self.user_label.setObjectName("userLabel")
         user_box.addWidget(self.user_label)
-        logout_btn = QPushButton("退出登录")
-        logout_btn.setObjectName("linkButton")
-        logout_btn.clicked.connect(self._logout)
-        user_box.addWidget(logout_btn)
         header.addLayout(user_box)
         header_frame = QFrame()
         header_frame.setObjectName("headerBar")
@@ -262,11 +230,6 @@ class MainWindow(QMainWindow):
 
     def _back_to(self, parent_key: str) -> None:
         self._nav_to(parent_key)
-
-    # ---------- 登出 ----------
-
-    def _logout(self) -> None:
-        self.client.auth.clear()  # 触发 _on_auth_changed
 
     # ---------- WS ----------
 

@@ -5,8 +5,8 @@ import sys
 
 # 必须先设置环境再导入任何 app.*（见 bootstrap 文档说明）。
 import bootstrap  # noqa: F401
-from app.core.logging import get_logger, setup_logging
-from app.services.seed import init_db
+from core.logging import get_logger, setup_logging
+from services.seed import init_db
 
 logger = get_logger("src.main")
 

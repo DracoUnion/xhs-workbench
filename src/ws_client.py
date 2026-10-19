@@ -9,7 +9,7 @@ from typing import Any
 
 from PySide6.QtCore import QObject, Signal
 
-from app.core.ws_manager import ws_manager
+from core.ws_manager import ws_manager
 
 
 class TaskEventClient(QObject):

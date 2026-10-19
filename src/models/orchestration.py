@@ -1,0 +1,105 @@
+"""Orchestration 上下文：Agent 定义、执行 Run、审核点、去重记录。"""
+from __future__ import annotations
+
+from datetime import datetime
+from uuid import UUID, uuid4
+
+from sqlalchemy import (
+    UUID,
+    Integer,
+    Boolean,
+    DateTime,
+    Index,
+    Integer,
+    JSON,
+    Numeric,
+    String,
+    Text,
+    func,
+    text,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from models.mixins import TimestampMixin
+from core.database import Base
+
+
+class AgentDef(TimestampMixin, Base):
+    """子 Agent 配置（提示词 + 工具白名单 + 模型），入库可在线改。"""
+
+    __tablename__ = "agent_defs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    key: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, server_default=text("''"))
+    name: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    tool_keys: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
+    model: Mapped[str] = mapped_column(String(48), nullable=False, server_default=text("'gpt-4o'"))
+    temperature: Mapped[float] = mapped_column(Numeric(2, 1), nullable=False, server_default=text("0.2"))
+    timeout_seconds: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("21600"))
+    is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+
+
+class AgentRun(TimestampMixin, Base):
+    """一次 Agent 执行：全量上下文 JSON 持久化 = 断点续跑能力。"""
+
+    __tablename__ = "agent_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_uuid: Mapped[UUID] = mapped_column(
+        UUID(as_uuid=True), unique=True, nullable=False, default=uuid4
+    )
+    agent_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    product_id: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, server_default=text("'pending'")
+    )  # pending|running|blocked|done|failed|killed
+    messages: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
+    tool_calls: Mapped[list] = mapped_column(JSON, nullable=False, server_default=text("'[]'"))
+    checkpoint: Mapped[dict | None] = mapped_column(JSON, nullable=True, server_default=text("'{}'"))
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True, server_default=text("'{}'"))
+    error: Mapped[dict | None] = mapped_column(JSON, nullable=True, server_default=text("'{}'"))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    continue_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_agent_runs_status_continue", "status", "continue_at"),
+        Index("ix_agent_runs_product", "product_id"),
+    )
+
+
+class ReviewPoint(Base):
+    """检查点：AUTO / REVIEW / MANUAL；REVIEW 阻塞 Run 等人工动作。"""
+
+    __tablename__ = "review_points"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    agent_key: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    rtype: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("''"))
+    payload: Mapped[dict] = mapped_column(JSON, nullable=False, server_default=text("'{}'"))
+    action: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("'pending'"))
+    action_by: Mapped[int | None] = mapped_column(Integer, nullable=True, server_default=text("0"))
+    action_note: Mapped[str | None] = mapped_column(Text, nullable=True, server_default=text("''"))
+    acted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (Index("ix_review_pending", "action", "rtype"),)
+
+
+class Dedup(Base):
+    """统一去重：同一产品下按 scope 去重（note|product|link）。"""
+
+    __tablename__ = "dedup"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    product_id: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    scope: Mapped[str] = mapped_column(String(16), nullable=False, server_default=text("''"))
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False, server_default=text("''"))
+    first_seen: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("uq_dedup_product_scope_fingerprint", "product_id", "scope", "fingerprint", unique=True),
+    )

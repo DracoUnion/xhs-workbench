@@ -8,20 +8,20 @@ from PySide6.QtWidgets import (
 )
 
 from client import get_client
-from pages.content import (
+from gui.content import (
     ContentsPage, KeywordsPage, NoteDetailPage, NotesPage, SkillEditorPage,
     SkillsPage, TemplatesPage,
 )
-from pages.dashboard import DashboardPage
-from pages.discovery import (
+from gui.dashboard import DashboardPage
+from gui.discovery import (
     AccountDetailPage, AccountsPage, DirectionsPage, ProductDetailPage,
     ProductsPage, RankingsPage,
 )
-from pages.login import LoginPage
-from pages.production import ProductStudioPage, ProductionProductsPage
-from pages.settings import SettingsPage
-from pages.task_center import TaskCenterPage
-from pages.xhs import XhsPage
+from gui.login import LoginPage
+from gui.production import ProductStudioPage, ProductionProductsPage
+from gui.settings import SettingsPage
+from gui.task_center import TaskCenterPage
+from gui.xhs import XhsPage
 from ws_client import TaskEventClient
 
 # (导航项文本, 路由 key)

@@ -10,11 +10,11 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.core.database import SessionLocal
-from app.core.exceptions import AppError
-from app.services import readonly
-from app.services.auth import authenticate, issue_tokens
-from app.services.runs import (
+from core.database import SessionLocal
+from core.exceptions import AppError
+from services import readonly
+from services.auth import authenticate, issue_tokens
+from services.runs import (
     abort_run,
     act_review_point,
     get_run,
@@ -24,7 +24,7 @@ from app.services.runs import (
     run_to_dict,
     submit_run,
 )
-from app.adapters.xhs import clear_cookies, cookie_status, set_cookie_string
+from adapters.xhs import clear_cookies, cookie_status, set_cookie_string
 
 TOKEN_INVALID_CODES = {"AUTH_REQUIRED", "TOKEN_INVALID", "PERMISSION_DENIED"}
 

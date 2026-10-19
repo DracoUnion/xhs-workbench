@@ -46,7 +46,7 @@ NAV_ITEMS: list[tuple[str, str]] = [
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("小红书 AI 工作台")
+        self.setWindowTitle("自媒体 AI 工作台")
         self.resize(1280, 820)
         self.client = get_client()
 
@@ -108,7 +108,7 @@ class MainWindow(QMainWindow):
         sidebar.setObjectName("sidebar")
         side = QVBoxLayout(sidebar)
         side.setContentsMargins(0, 12, 0, 12)
-        logo = QLabel("小红书 AI 工作台")
+        logo = QLabel("自媒体 AI 工作台")
         logo.setObjectName("logo")
         side.addWidget(logo)
 

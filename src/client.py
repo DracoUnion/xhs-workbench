@@ -1,4 +1,4 @@
-"""后端直连客户端：PyQt 直接调用 app.services 的服务函数，替代原 HTTP 层。
+"""后端直连客户端：PyQt 直接调用 services 等服务函数，替代原 HTTP 层。
 
 - 每次调用在独立 SQLAlchemy Session 中执行，用后即关
 - 后端异常（AppError）→ ApiError，保持与旧 HTTP 层一致的 code/message/details

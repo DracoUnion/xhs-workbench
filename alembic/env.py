@@ -1,13 +1,20 @@
-"""Alembic 迁移环境：读取 app 配置的数据库连接，绑定应用 metadata。"""
+"""Alembic 迁移环境：读取应用配置的数据库连接，绑定应用 metadata。"""
 from __future__ import annotations
 
+import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from app.core.config import get_settings
-from app.models import Base  # 导入全量模型以收集 metadata
+# 后端子包位于 src/ 下（core/models/services/...），加入 sys.path 以顶层导入。
+_SRC_DIR = Path(__file__).resolve().parent.parent / "src"
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
+from core.config import get_settings
+from models import Base  # 导入全量模型以收集 metadata
 
 config = context.config
 

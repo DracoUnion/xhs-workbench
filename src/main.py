@@ -25,7 +25,7 @@ def run() -> None:
     from styles import apply_styles
 
     app = QApplication(sys.argv)
-    app.setApplicationName("小红书 AI 工作台")
+    app.setApplicationName("自媒体 AI 工作台")
     apply_styles(app)
 
     win = MainWindow()

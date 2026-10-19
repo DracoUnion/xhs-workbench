@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     # ---------- 启动 ----------
-    app_name: str = "小红书 AI 工作台后端"
+    app_name: str = "自媒体 AI 工作台后端"
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
     # 任务执行器：inline（默认，无需 Redis）| celery（需 Redis/Celery worker）

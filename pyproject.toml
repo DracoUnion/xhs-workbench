@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "xhs-workbench-backend"
 version = "0.1.0"
-description = "小红书 AI 工作台后端（OpenAI API + SQLAlchemy 服务层）"
+description = "自媒体 AI 工作台后端（OpenAI API + SQLAlchemy 服务层）"
 requires-python = ">=3.10"
 dependencies = [
     "sqlalchemy>=2.0.30,<2.1",

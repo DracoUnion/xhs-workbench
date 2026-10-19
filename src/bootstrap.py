@@ -1,11 +1,11 @@
 """桌面版启动前的环境准备。
 
-必须在导入任何 app.* 模块之前执行：app.core.config.get_settings() 被缓存，
-app.core.database.engine 也在导入时创建。桌面版使用自己的 SQLite 数据文件，
+必须在导入任何后端模块之前执行：core.config.get_settings() 被缓存，
+core.database.engine 也在导入时创建。桌面版使用自己的 SQLite 数据文件，
 避免与仓库根目录的 Web 版数据库互相锁定。
 
-路径约定：后端已整体移入 src/app/，保持 `import app` 命名不变——
-通过把 src/ 插入 sys.path 的前部实现（app 包现在位于 src/app）。
+路径约定：后端子包（core/services/models/adapters/...）位于 src/ 下，
+通过把 src/ 插入 sys.path 的前部实现顶层导入。
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ LOG_DIR = DATA_DIR / "logs"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# 让 `import app` 解析到 src/app/（后端包），同时仍允许 `import src`。
+# 让 `import core`/`import services` 等顶层包解析到 src/ 下的后端子包。
 if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 

@@ -11,14 +11,14 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# 后端位于 src/app/，保持 `import app`：把 src/ 加入 sys.path。
+# 后端子包位于 src/ 下，把 src/ 加入 sys.path 以顶层导入。
 _APP_DIR = Path(__file__).resolve().parent.parent / "src"
 if str(_APP_DIR) not in sys.path:
     sys.path.insert(0, str(_APP_DIR))
 
 
 def main() -> int:
-    from app.adapters.xhs import login_by_qrcode
+    from adapters.xhs import login_by_qrcode
 
     try:
         data = login_by_qrcode()

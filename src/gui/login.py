@@ -23,7 +23,7 @@ class LoginPage(QWidget):
         outer.addLayout(center, 3)
         outer.addStretch()
 
-        logo = QLabel("小红书 AI 工作台")
+        logo = QLabel("自媒体 AI 工作台")
         logo.setObjectName("loginLogo")
         logo.setAlignment(Qt.AlignCenter)
         center.addWidget(logo)

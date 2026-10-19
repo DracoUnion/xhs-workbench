@@ -21,4 +21,4 @@ celery_app.conf.update(
 )
 
 # 任务自动发现
-celery_app.conf.include = ["app.tasks.runs"]
+celery_app.conf.include = ["tasks.runs"]

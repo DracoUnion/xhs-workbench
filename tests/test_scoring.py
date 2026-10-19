@@ -1,5 +1,5 @@
 """评分服务：按 PRD 4.1.3 手算校验。"""
-from app.services.scoring import score_from_ranges
+from services.scoring import score_from_ranges
 
 
 def test_prd_example_boosted_low_fans():

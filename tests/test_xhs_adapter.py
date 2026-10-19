@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import pytest
 
-from app.core.exceptions import AppError
-from app.adapters.xhs.auth import cookie_str_to_dict
-from app.adapters.xhs.bridge import (
+from core.exceptions import AppError
+from adapters.xhs.auth import cookie_str_to_dict
+from adapters.xhs.bridge import (
     XhsBrowserUnavailable,
     XhsSessionError,
     client_session,
@@ -15,13 +15,13 @@ from app.adapters.xhs.bridge import (
     current_cookie_dict,
     cookie_status,
 )
-from app.adapters.xhs.exceptions import DataFetchError, LoginError
+from adapters.xhs.exceptions import DataFetchError, LoginError
 
 
 def test_vendored_modules_import_without_browser_deps():
     # 顶部无 heavy 依赖；能走到这里即证明 client/auth 模块可脱离 camoufox 导入。
-    from app.adapters.xhs import client as _c  # noqa: F401
-    from app.adapters.xhs import auth as _a  # noqa: F401
+    from adapters.xhs import client as _c  # noqa: F401
+    from adapters.xhs import auth as _a  # noqa: F401
 
 
 def test_cookie_str_to_dict():

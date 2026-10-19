@@ -79,7 +79,7 @@ class DedupCheckParams(BaseModel):
 
 @tool("dedup_check", "占位：检查是否已采集过（M1 接入数据库后启用）", DedupCheckParams)
 def dedup_check(product_id: int, fingerprint: str) -> dict:
-    # TODO(M1): 用 app.models.Dedup 实现真实判重
+    # TODO(M1): 用 models.Dedup 实现真实判重
     return {
         "duplicate": False,
         "note": "dedup_check 尚未接入数据库，当前恒返回不重复，请勿在生产环境依赖此结果",

@@ -1,5 +1,5 @@
 """工具注册表：schema 生成、白名单过滤、统一调用。"""
-from app.tools import registry
+from tools import registry
 
 
 def test_account_score_schema_is_valid_function():

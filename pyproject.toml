@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [project.scripts]
-xhs-backend = "app.main:run"
+xhs-workbench = "standalone.main:run"
 
 [project.optional-dependencies]
 dev = [
@@ -40,7 +40,7 @@ xhs = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*"]
+include = ["standalone*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

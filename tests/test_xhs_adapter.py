@@ -48,7 +48,14 @@ def test_translate_fetch_error_to_recoverable():
 
 
 def test_client_session_reports_browser_unavailable_without_camoufox():
-    # 未安装 camoufox 时应给出明确的特性不可用错误，而不是堆栈。
+    # 该用例只针对未安装 camoufox 的离线环境；已安装时会真实启动浏览器，断言不再适用。
+    try:
+        import camoufox  # noqa: F401
+    except ImportError:
+        pass
+    else:
+        pytest.skip("camoufox 已安装：此处会真实启动浏览器，仅验证未安装环境的报错")
+
     with pytest.raises((XhsBrowserUnavailable, AppError)) as excinfo:
         with client_session(cookies={"a1": "a", "web_session": "b"}):
             pass

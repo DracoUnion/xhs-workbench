@@ -9,6 +9,12 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
+
+# 后端位于 standalone/app/，保持 `import app`：把 standalone/ 加入 sys.path。
+_APP_DIR = Path(__file__).resolve().parent.parent / "standalone"
+if str(_APP_DIR) not in sys.path:
+    sys.path.insert(0, str(_APP_DIR))
 
 
 def main() -> int:

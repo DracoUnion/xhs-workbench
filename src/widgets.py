@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QTableView, QTextEdit, QVBoxLayout, QWidget, QComboBox,
 )
 
-from .client import ApiError
+from client import ApiError
 
 
 def fmt_dt(value: Any) -> str:

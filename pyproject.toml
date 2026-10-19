@@ -19,24 +19,25 @@ dependencies = [
     "redis>=5",
     "celery>=5.4",
     "openai>=1.40",
+    # 小红书 HTTP API 客户端（xhs-cli）：签名/传输/终端 QR
+    "httpx>=0.27",
+    "xhshow>=0.1.9",
+    "pycryptodome>=3.20",
+    "qrcode>=7.0",
 ]
 
 [project.scripts]
-xhs-workbench = "src.main:run"
+xhs-workbench = "main:run"
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
 ]
-# 小红书浏览器采集（xhs-cli）。未安装时后端可正常启动，仅采集/登录功能不可用。
-xhs = [
-    "camoufox>=0.4",
-]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["core*", "services*", "models*", "adapters*", "agents*", "tools*", "tasks*", "gui*", "repositories*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

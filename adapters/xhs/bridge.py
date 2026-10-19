@@ -1,7 +1,7 @@
-"""xhs-cli 适配层。
+"""xhs-cli HTTP API 适配层。
 
-上游实现通过真实 Camoufox 页面读取 __INITIAL_STATE__，本模块只负责把它
-接入本项目的配置、错误体系和领域数据格式，不改变上游采集行为。
+XhsClient 使用 xiaohongshu-cli 的签名 HTTP API，不再启动 Camoufox 或导航浏览器页面。
+本模块负责接入工作台配置、错误体系、Cookie 生命周期和业务数据归一化。
 """
 from __future__ import annotations
 
@@ -26,11 +26,24 @@ from .auth import (
     save_cookies,
 )
 from .client import XhsClient
-from .exceptions import CookieError, DataFetchError, LoginError, XhsError
+from .exceptions import (
+    CookieError,
+    DataFetchError,
+    IpBlockedError,
+    LoginError,
+    NeedVerifyError,
+    SessionExpiredError,
+    SignatureError,
+    UnsupportedOperationError,
+    XhsApiError,
+    XhsError,
+)
 
 
 class XhsBrowserUnavailable(AppError):
-    default_message = "小红书浏览器依赖未安装，请安装 camoufox 后再使用采集功能"
+    """兼容旧调用方的错误类型；HTTP 客户端不再触发该错误。"""
+
+    default_message = "已切换为 HTTP API 客户端，不需要浏览器依赖"
 
     def __init__(self, message: str | None = None) -> None:
         super().__init__(
@@ -47,21 +60,23 @@ class XhsSessionError(AppError):
 
 
 def cookie_file() -> Path:
-    """返回当前 cookie 文件路径：优先 XHS_COOKIE_FILE 覆盖，否则用上游默认路径。"""
+    """返回当前 cookie 文件路径：优先 XHS_COOKIE_FILE 覆盖，否则用工作台默认路径。"""
     s = get_settings()
     configured = (s.xhs_cookie_file or os.getenv("XHS_COOKIE_FILE", "")).strip()
     return Path(configured).expanduser() if configured else COOKIE_FILE
 
 
 def load_cookie_string(*, allow_browser: bool = False) -> str | None:
-    """读取 cookie，不默认触发浏览器 cookie 扫描，避免 API 请求产生隐式副作用。"""
+    """读取 cookie；allow_browser 仅控制可选的本机浏览器 Cookie 提取。"""
     s = get_settings()
     configured = (s.xhs_cookies or os.getenv("XHS_COOKIES", "")).strip()
     if configured:
         return configured
     if allow_browser:
-        return get_cookie_string()
-    return get_saved_cookie_string()
+        cookie = get_cookie_string()
+    else:
+        cookie = get_saved_cookie_string()
+    return cookie
 
 
 def current_cookie_dict(*, allow_browser: bool = False) -> dict[str, str]:
@@ -99,7 +114,23 @@ def set_cookie_string(cookie: str) -> dict[str, Any]:
 
 
 def translate_error(exc: Exception) -> AppError:
-    """将上游异常转换为本项目错误；保留原始异常作为 cause 由调用方记录。"""
+    """将旧版与 HTTP API 异常统一转换为工作台领域错误。"""
+    if isinstance(exc, SessionExpiredError):
+        return XhsSessionError(str(exc))
+    if isinstance(exc, NeedVerifyError):
+        return RecoverableError(
+            message=str(exc), code="XHS_NEED_VERIFY", details={"verify_uuid": exc.verify_uuid}
+        )
+    if isinstance(exc, IpBlockedError):
+        return RecoverableError(message=str(exc), code="XHS_IP_BLOCKED")
+    if isinstance(exc, SignatureError):
+        return RecoverableError(message=str(exc), code="XHS_SIGNATURE_ERROR")
+    if isinstance(exc, UnsupportedOperationError):
+        return RecoverableError(message=str(exc), code="XHS_UNSUPPORTED_OPERATION")
+    if isinstance(exc, XhsApiError):
+        return RecoverableError(
+            message=str(exc), code="XHS_OPERATION_FAILED", details={"api_code": exc.code}
+        )
     if isinstance(exc, LoginError):
         return XhsSessionError(str(exc))
     if isinstance(exc, CookieError):
@@ -109,30 +140,19 @@ def translate_error(exc: Exception) -> AppError:
             message=str(exc), code="XHS_DATA_FETCH_FAILED", details={"source": "xhs-cli"}
         )
     if isinstance(exc, XhsError):
-        return RecoverableError(
-            message=str(exc), code="XHS_OPERATION_FAILED", details={"source": "xhs-cli"}
-        )
-    if isinstance(exc, ImportError) and "camoufox" in str(exc).lower():
-        return XhsBrowserUnavailable()
+        return RecoverableError(message=str(exc), code="XHS_OPERATION_FAILED")
     return RecoverableError(message=str(exc), code="XHS_OPERATION_FAILED")
-
-
-def _ensure_browser_dependency() -> None:
-    try:
-        import camoufox  # noqa: F401
-    except ImportError as exc:
-        raise XhsBrowserUnavailable() from exc
 
 
 @contextmanager
 def client_session(
     *, cookies: dict[str, str] | None = None, allow_browser_cookie_extraction: bool = False
 ) -> Iterator[XhsClient]:
-    """创建一个独占的 XhsClient 会话。
+    """创建一个独占的 HTTP XhsClient 会话。
 
-    调用者负责通过设备锁/任务锁保证同一时刻只有一个浏览器采集任务。
+    ``allow_browser_cookie_extraction`` 仅允许读取本机已有 Cookie，
+    不会启动浏览器页面；数据请求、签名和重试全部走 HTTP API。
     """
-    _ensure_browser_dependency()
     resolved = cookies or current_cookie_dict(allow_browser=allow_browser_cookie_extraction)
     if not _has_required_cookies(resolved):
         raise XhsSessionError("未找到有效登录 cookie，请先设置 cookie 或执行 xhs login")
@@ -154,9 +174,27 @@ def _first(mapping: dict[str, Any], *keys: str, default: Any = None) -> Any:
     return default
 
 
+def _unwrap_note_payload(raw: dict[str, Any]) -> dict[str, Any]:
+    """Extract a note object from feed/search/API/HTML response variants."""
+    if not isinstance(raw, dict):
+        return {}
+    items = raw.get("items")
+    if isinstance(items, list) and items:
+        first = items[0]
+        if isinstance(first, dict):
+            return _unwrap_note_payload(first)
+    note_card = raw.get("note_card")
+    if isinstance(note_card, dict):
+        return note_card
+    note = raw.get("note")
+    if isinstance(note, dict):
+        return note
+    return raw
+
+
 def normalize_note(raw: dict[str, Any], *, keyword: str | None = None) -> dict[str, Any]:
-    """将 xhs-cli 的多版本字段归一为 notes 表可消费的结构。"""
-    note = raw.get("note") if isinstance(raw.get("note"), dict) else raw
+    """将 HTTP API/HTML 的多版本字段归一为 notes 表可消费的结构。"""
+    note = _unwrap_note_payload(raw)
     user = _first(note, "user", "author", default={}) or {}
     interact = _first(note, "interactInfo", "interact_info", default={}) or {}
     images = _first(note, "imageList", "image_list", "images", default=[]) or []
@@ -165,27 +203,37 @@ def normalize_note(raw: dict[str, Any], *, keyword: str | None = None) -> dict[s
         if isinstance(image, str):
             normalized_images.append({"url": image, "seq": seq})
         elif isinstance(image, dict):
-            url = _first(image, "url", "urlDefault", "url_default", "originUrl", "origin_url")
+            url = _first(
+                image,
+                "url",
+                "urlDefault",
+                "url_default",
+                "originUrl",
+                "origin_url",
+            )
             if url:
                 normalized_images.append({"url": url, "seq": seq})
     note_id = _first(note, "noteId", "note_id", "id", default="")
     media_type = _first(note, "type", "mediaType", "media_type", default="image")
-    if str(media_type).lower() in {"video", "视频"}:
-        media_type = "video"
-    else:
-        media_type = "image"
+    media_type = "video" if str(media_type).lower() in {"video", "视频"} else "image"
+    topics = _first(note, "tagList", "tag_list", "topics", default=[]) or []
+    normalized_topics = [
+        (item.get("name", "") if isinstance(item, dict) else str(item))
+        for item in topics
+    ]
     return {
         "note_id": str(note_id),
         "keyword": keyword,
         "title": _first(note, "title", "displayTitle", "display_title", default=""),
         "body": _first(note, "desc", "description", "body", default=""),
-        "topics": _first(note, "tagList", "tag_list", "topics", default=[]),
+        "topics": normalized_topics,
         "author": _first(user, "nickname", "name", default=""),
         "author_id": _first(user, "userId", "user_id", "id", default=""),
         "interactions": {
             "likes": _first(interact, "likedCount", "liked_count", "likes", default=0),
             "collects": _first(interact, "collectedCount", "collected_count", "collects", default=0),
             "comments": _first(interact, "commentCount", "comment_count", "comments", default=0),
+            "shares": _first(interact, "shareCount", "share_count", "shares", default=0),
         },
         "media_type": media_type,
         "images": normalized_images,
@@ -194,7 +242,7 @@ def normalize_note(raw: dict[str, Any], *, keyword: str | None = None) -> dict[s
 
 
 class XhsGateway:
-    """面向业务服务的同步网关，封装 XhsClient 生命周期。"""
+    """面向业务服务的同步 HTTP 网关，封装 XhsClient 生命周期。"""
 
     def __init__(self, cookies: dict[str, str] | None = None) -> None:
         self.cookies = cookies
@@ -202,7 +250,9 @@ class XhsGateway:
     def search_notes(self, keyword: str) -> list[dict[str, Any]]:
         try:
             with client_session(cookies=self.cookies) as client:
-                return [normalize_note(item, keyword=keyword) for item in client.search_notes(keyword)]
+                data = client.search_notes(keyword)
+                items = data.get("items", []) if isinstance(data, dict) else data
+                return [normalize_note(item, keyword=keyword) for item in items if isinstance(item, dict)]
         except AppError:
             raise
         except Exception as exc:
@@ -229,7 +279,9 @@ class XhsGateway:
     def get_user_posts(self, user_id: str) -> list[dict[str, Any]]:
         try:
             with client_session(cookies=self.cookies) as client:
-                return [normalize_note(item) for item in client.get_user_posts(user_id)]
+                data = client.get_user_notes(user_id)
+                notes = data.get("notes", data.get("items", [])) if isinstance(data, dict) else data
+                return [normalize_note(item) for item in notes if isinstance(item, dict)]
         except AppError:
             raise
         except Exception as exc:
@@ -240,7 +292,9 @@ class XhsGateway:
     ) -> list[dict[str, Any]]:
         try:
             with client_session(cookies=self.cookies) as client:
-                return client.get_note_comments(note_id, xsec_token, max_comments)
+                data = client.get_all_comments(note_id, xsec_token=xsec_token)
+                comments = data.get("comments", []) if isinstance(data, dict) else []
+                return comments[:max_comments]
         except AppError:
             raise
         except Exception as exc:
@@ -248,10 +302,11 @@ class XhsGateway:
 
 
 def login_by_qrcode() -> dict[str, Any]:
-    """交互式登录入口；QR 扫码必须在服务端宿主终端执行。"""
-    _ensure_browser_dependency()
+    """交互式 HTTP QR 登录；不启动 Camoufox。"""
     try:
         cookie = qrcode_login()
+    except AppError:
+        raise
     except Exception as exc:
         raise translate_error(exc) from exc
     return set_cookie_string(cookie)

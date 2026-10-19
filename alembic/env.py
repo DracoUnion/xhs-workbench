@@ -8,10 +8,10 @@ from pathlib import Path
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-# 后端子包位于 src/ 下（core/models/services/...），加入 sys.path 以顶层导入。
-_SRC_DIR = Path(__file__).resolve().parent.parent / "src"
-if str(_SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(_SRC_DIR))
+# 工作台包位于仓库根（core/models/services/...），加入 sys.path 以顶层导入。
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 from core.config import get_settings
 from models import Base  # 导入全量模型以收集 metadata

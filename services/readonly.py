@@ -1,7 +1,7 @@
 """只读查询服务：为桌面界面提供 SELECT 数据，返回 JSON 兼容 dict。
 
-源自原 src/readonly.py（FastAPI 路由）。移除 HTTP 层后改为纯函数，
-由 src/client.py 在独立 Session 中直接调用。返回形状与前端类型一致。
+源自原 readonly.py（FastAPI 路由）。移除 HTTP 层后改为纯函数，
+由 client.py 在独立 Session 中直接调用。返回形状与前端类型一致。
 """
 from __future__ import annotations
 

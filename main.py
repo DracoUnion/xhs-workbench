@@ -3,16 +3,16 @@ from __future__ import annotations
 
 import sys
 
-# 必须先设置环境再导入任何 app.*（见 bootstrap 文档说明）。
+# 必须先设置环境再导入任何后端模块（见 bootstrap 文档说明）。
 import bootstrap  # noqa: F401
 from core.logging import get_logger, setup_logging
 from services.seed import init_db
 
-logger = get_logger("src.main")
+logger = get_logger("main")
 
 
 def run() -> None:
-    # 替代原内嵌 HTTP 服务：PyQt 直接调用 services 层（app/main.startup_backend）。
+    # 桌面版不再启动 HTTP 服务：PyQt 直接调用 services 层。
     setup_logging()
     try:
         init_db()

@@ -1,7 +1,7 @@
 """进程内事件广播：把运行事件分发给已注册的 sink（Qt 界面等）。
 
 替代原 WebSocket 连接管理。单机桌面应用不再需要 HTTP/WS 传输，
-广播同步执行；sink 侧（src/ws_client.py）负责跨线程投递为 Qt 信号。
+广播同步执行；sink 侧（ws_client.py）负责跨线程投递为 Qt 信号。
 """
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-# 桌面版（src/）运行时依赖。
-# 后端 app/ 的依赖（sqlalchemy/pydantic/JWT/openai 等）由仓库根目录的
+# 桌面版运行时依赖（PySide6 UI）。
+# 后端依赖（sqlalchemy/pydantic/JWT/openai/xhshow 等）由仓库根目录的
 # pyproject.toml 提供，见 README。
 PySide6>=6.6

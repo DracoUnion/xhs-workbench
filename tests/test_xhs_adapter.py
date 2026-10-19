@@ -6,7 +6,6 @@ import pytest
 from core.exceptions import AppError
 from adapters.xhs.auth import cookie_str_to_dict
 from adapters.xhs.bridge import (
-    XhsBrowserUnavailable,
     XhsSessionError,
     client_session,
     has_login_cookies,
@@ -15,13 +14,26 @@ from adapters.xhs.bridge import (
     current_cookie_dict,
     cookie_status,
 )
+from adapters.xhs.client import XhsClient
 from adapters.xhs.exceptions import DataFetchError, LoginError
 
 
 def test_vendored_modules_import_without_browser_deps():
-    # 顶部无 heavy 依赖；能走到这里即证明 client/auth 模块可脱离 camoufox 导入。
+    # 顶部无浏览器依赖；能走到这里即证明 client/auth 模块可脱离 camoufox 导入。
     from adapters.xhs import client as _c  # noqa: F401
     from adapters.xhs import auth as _a  # noqa: F401
+
+
+def test_client_session_requires_login_cookies():
+    # 显式缺 web_session → 直接拒绝；不依赖本机是否已有保存的 cookie。
+    with pytest.raises(XhsSessionError):
+        with client_session(cookies={"a1": "a"}):
+            pass
+
+
+def test_client_session_with_valid_cookies_creates_http_client():
+    with client_session(cookies={"a1": "a", "web_session": "b"}) as client:
+        assert isinstance(client, XhsClient)
 
 
 def test_cookie_str_to_dict():
@@ -45,21 +57,6 @@ def test_translate_fetch_error_to_recoverable():
     err = translate_error(DataFetchError("page lacked data"))
     assert isinstance(err, AppError)
     assert getattr(err, "code", "XHS_OPERATION_FAILED") == "XHS_DATA_FETCH_FAILED"
-
-
-def test_client_session_reports_browser_unavailable_without_camoufox():
-    # 该用例只针对未安装 camoufox 的离线环境；已安装时会真实启动浏览器，断言不再适用。
-    try:
-        import camoufox  # noqa: F401
-    except ImportError:
-        pass
-    else:
-        pytest.skip("camoufox 已安装：此处会真实启动浏览器，仅验证未安装环境的报错")
-
-    with pytest.raises((XhsBrowserUnavailable, AppError)) as excinfo:
-        with client_session(cookies={"a1": "a", "web_session": "b"}):
-            pass
-    assert getattr(excinfo.value, "code", None) == "XHS_BROWSER_UNAVAILABLE"
 
 
 def test_normalize_note_camel_and_snake():
@@ -91,6 +88,47 @@ def test_normalize_note_camel_and_snake():
     out2 = normalize_note(snake)
     assert out2["note_id"] == "n2"
     assert out2["media_type"] == "video"
+
+
+def test_normalize_note_api_note_card_shape():
+    # 新 HTTP API 列表项形状：items[].note_card 嵌套。
+    api_item = {
+        "id": "n3",
+        "xsec_token": "tok",
+        "note_card": {
+            "note_id": "n3",
+            "display_title": "API 标题",
+            "desc": "API 正文",
+            "type": "video",
+            "user": {"nickname": "API 作者", "user_id": "u3"},
+            "interact_info": {"liked_count": "3", "collected_count": "4", "comment_count": "5"},
+            "image_list": [{"url_default": "https://api/a.jpg"}],
+        },
+    }
+    out = normalize_note(api_item, keyword="设计")
+    assert out["note_id"] == "n3"
+    assert out["title"] == "API 标题"
+    assert out["author"] == "API 作者"
+    assert out["media_type"] == "video"
+    assert out["interactions"]["likes"] == "3"
+    assert len(out["images"]) == 1
+    # feed API 详情：{"items": [{ "note_card": {...} }]}
+    detail = {
+        "items": [
+            {
+                "id": "n4",
+                "note_card": {
+                    "note_id": "n4",
+                    "title": "详情",
+                    "type": "normal",
+                    "interact_info": {"liked_count": 9},
+                },
+            }
+        ]
+    }
+    out2 = normalize_note(detail)
+    assert out2["note_id"] == "n4"
+    assert out2["media_type"] == "image"
 
 
 def test_cookie_status_reflects_empty_config():

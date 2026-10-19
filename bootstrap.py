@@ -4,8 +4,8 @@
 core.database.engine 也在导入时创建。桌面版使用自己的 SQLite 数据文件，
 避免与仓库根目录的 Web 版数据库互相锁定。
 
-路径约定：后端子包（core/services/models/adapters/...）位于 src/ 下，
-通过把 src/ 插入 sys.path 的前部实现顶层导入。
+路径约定：工作台包（core/services/models/adapters/...）位于仓库根目录，
+运行 `python main.py` 时根目录已在 sys.path 前部。
 """
 from __future__ import annotations
 
@@ -19,11 +19,11 @@ LOG_DIR = DATA_DIR / "logs"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-# 让 `import core`/`import services` 等顶层包解析到 src/ 下的后端子包。
+# 运行入口可能不在仓库根（如 pytest/alembic/scripts），确保根目录在 sys.path 前部。
 if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
-# 桌面版始终使用 src/data 下的数据库；业务配置仍可由环境变量提供。
+# 桌面版始终使用根目录 data/ 下的数据库；业务配置仍可由环境变量提供。
 os.environ["DATABASE_URL"] = f"sqlite:///{(DATA_DIR / 'xhs_workbench.db').as_posix()}"
 os.environ["RUN_EXECUTOR"] = "inline"
 os.environ.setdefault("LOG_DIR", str(LOG_DIR))

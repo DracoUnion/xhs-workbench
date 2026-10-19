@@ -1,7 +1,4 @@
-"""独立运行：交互式小红书扫码登录并保存 cookie。
-
-浏览器依赖（camoufox）以额外可选组件安装，未安装时仅报错提示：
-    pip install -e ".[xhs]"
+"""独立运行：交互式小红书 HTTP QR 扫码登录并保存 cookie。
 
 用法：
     python -m scripts.xhs_login
@@ -11,10 +8,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# 后端子包位于 src/ 下，把 src/ 加入 sys.path 以顶层导入。
-_APP_DIR = Path(__file__).resolve().parent.parent / "src"
-if str(_APP_DIR) not in sys.path:
-    sys.path.insert(0, str(_APP_DIR))
+# 工作台包位于仓库根，把根目录加入 sys.path 以顶层导入。
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 
 def main() -> int:

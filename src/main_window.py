@@ -7,22 +7,22 @@ from PySide6.QtWidgets import (
     QPushButton, QSplitter, QStackedWidget, QVBoxLayout, QWidget,
 )
 
-from standalone.client import get_client
-from standalone.pages.content import (
+from src.client import get_client
+from src.pages.content import (
     ContentsPage, KeywordsPage, NoteDetailPage, NotesPage, SkillEditorPage,
     SkillsPage, TemplatesPage,
 )
-from standalone.pages.dashboard import DashboardPage
-from standalone.pages.discovery import (
+from src.pages.dashboard import DashboardPage
+from src.pages.discovery import (
     AccountDetailPage, AccountsPage, DirectionsPage, ProductDetailPage,
     ProductsPage, RankingsPage,
 )
-from standalone.pages.login import LoginPage
-from standalone.pages.production import ProductStudioPage, ProductionProductsPage
-from standalone.pages.settings import SettingsPage
-from standalone.pages.task_center import TaskCenterPage
-from standalone.pages.xhs import XhsPage
-from standalone.ws_client import TaskEventClient
+from src.pages.login import LoginPage
+from src.pages.production import ProductStudioPage, ProductionProductsPage
+from src.pages.settings import SettingsPage
+from src.pages.task_center import TaskCenterPage
+from src.pages.xhs import XhsPage
+from src.ws_client import TaskEventClient
 
 # (导航项文本, 路由 key)
 NAV_ITEMS: list[tuple[str, str]] = [
@@ -288,7 +288,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:  # noqa: N802
         self.ws.stop()
         self.ws.wait(3000)
-        from standalone import server as srv
+        from src import server as srv
 
         srv.stop_server()
         super().closeEvent(event)

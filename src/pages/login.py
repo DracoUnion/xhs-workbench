@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget,
 )
 
-from standalone.client import ApiError
+from src.client import ApiError
 
 
 class LoginPage(QWidget):
@@ -52,7 +52,7 @@ class LoginPage(QWidget):
         self.login_btn.clicked.connect(self._submit)
         center.addWidget(self.login_btn)
 
-        hint = QLabel("初始账号 admin / admin123（在 standalone/data 独立数据库播种）")
+        hint = QLabel("初始账号 admin / admin123（在 src/data 独立数据库播种）")
         hint.setObjectName("muted")
         hint.setAlignment(Qt.AlignCenter)
         center.addWidget(hint)

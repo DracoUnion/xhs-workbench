@@ -4,15 +4,15 @@ from __future__ import annotations
 import sys
 
 # 必须先设置环境再导入任何 app.*（见 bootstrap 文档说明）。
-import standalone.bootstrap  # noqa: F401
+import src.bootstrap  # noqa: F401
 
 
 def run() -> None:
-    import standalone.server as srv
+    import src.server as srv
     from PySide6.QtWidgets import QApplication
 
-    from standalone.main_window import MainWindow
-    from standalone.styles import apply_styles
+    from src.main_window import MainWindow
+    from src.styles import apply_styles
 
     srv.start_server()
 

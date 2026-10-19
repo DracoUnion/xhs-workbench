@@ -1,7 +1,7 @@
 # 小红书 AI 工作台 · 桌面版（PySide6）
 
 单进程**桌面应用**：后端（FastAPI + SQLAlchemy + 任务编排 + 小红书适配器）整体位于本包
-`standalone/app/`（保持 `import app` 命名，由 `bootstrap.py` 把 standalone/ 加入 sys.path 实现）；
+`src/app/`（保持 `import app` 命名，由 `bootstrap.py` 把 src/ 加入 sys.path 实现）；
 原 React 前端已并入桌面端并移除。
 
 - 后端以**内嵌 uvicorn** 方式运行在进程内守护线程（`127.0.0.1:<随机端口>`）；
@@ -15,15 +15,15 @@
 pip install -e .
 
 # 2. 安装桌面 UI 依赖
-pip install -r standalone/requirements.txt
+pip install -r requirements.txt
 
 # 3. 启动
-python -m standalone
+python -m src
 ```
 
 启动后默认登录 `admin / admin123`。
 
-> 桌面版使用**独立的数据库** `standalone/data/xhs_workbench.db`（与其他数据库隔离），
+> 桌面版使用**独立的数据库** `src/data/xhs_workbench.db`（与其他数据库隔离），
 > 首次启动由后端 `init_db()` 自动建表与播种（管理员、5 个 Agent 定义、8 个榜单入口、风控参数）。
 
 ## 架构

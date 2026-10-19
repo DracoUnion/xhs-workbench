@@ -6,8 +6,8 @@ from PySide6.QtWidgets import (
     QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget,
 )
 
-from standalone.client import ApiError
-from standalone.widgets import (
+from src.client import ApiError
+from src.widgets import (
     ConfirmDialog, DataTable, JsonViewer, MessageDialog, Page,
     ReviewPointDialog, StatusTag, TaskDialog, fmt_dt,
 )

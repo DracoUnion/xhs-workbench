@@ -15,7 +15,7 @@ from typing import Any
 
 from PySide6.QtCore import QThread, Signal
 
-logger = logging.getLogger("standalone.ws")
+logger = logging.getLogger("src.ws")
 
 
 class TaskEventClient(QThread):
@@ -32,7 +32,7 @@ class TaskEventClient(QThread):
         self._stop.set()
 
     def _ws_url(self) -> str:
-        from standalone.server import server_ws_url
+        from src.server import server_ws_url
 
         token = self._auth.access_token or ""
         return f"{server_ws_url()}?token={token}"

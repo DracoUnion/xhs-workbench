@@ -1,6 +1,6 @@
 """内嵌 FastAPI 服务：守护线程中运行 uvicorn，Qt 界面通过 HTTP/WebSocket 访问。
 
-关键点：必须先 import standalone.bootstrap（已由 __main__ 或 main 完成）。
+关键点：必须先 import src.bootstrap（已由 __main__ 或 main 完成）。
 readonly_router 将在 create_app() 之前并入 app.api.v1.router.api_router，
 这样 create_app() 复制路由时即包含只读视图，且落在末尾 catch-all 404 之前，
 避免被 Starlette 的顺序匹配遮蔽。
@@ -14,11 +14,11 @@ from typing import Any
 
 import uvicorn
 
-import standalone.readonly  # noqa: F401  (模块级引入以复用其 router 对象)
+import src.readonly  # noqa: F401  (模块级引入以复用其 router 对象)
 from app.api.v1.router import api_router
-from standalone.readonly import router as readonly_router
+from src.readonly import router as readonly_router
 
-logger = logging.getLogger("standalone.server")
+logger = logging.getLogger("src.server")
 
 # 启动后填充：Qt 界面 client.py 读取该端口。
 SERVER_HOST = "127.0.0.1"
@@ -45,7 +45,7 @@ def build_app(port: int) -> Any:
     app = create_app()
 
     # 便于客户端探活：/healthz 已存在；补充返回绑定端口信息。
-    @app.get("/standalone/info", include_in_schema=False)
+    @app.get("/src/info", include_in_schema=False)
     def _info() -> dict:
         return {"status": "ok", "host": SERVER_HOST, "port": port}
 
@@ -53,7 +53,7 @@ def build_app(port: int) -> Any:
 
 
 def start_server() -> int:
-    """启动内嵌服务（守护线程），返回监听端口。调用前必须先跑 standalone.bootstrap。"""
+    """启动内嵌服务（守护线程），返回监听端口。调用前必须先跑 src.bootstrap。"""
     global SERVER_PORT, _server, _thread
     SERVER_PORT = _find_free_port()
     app = build_app(SERVER_PORT)
@@ -63,7 +63,7 @@ def start_server() -> int:
     def _run() -> None:
         _server.run()  # 阻塞；lifespan 会绑定 WS 主循环并 init_db() 播种
 
-    _thread = threading.Thread(target=_run, name="standalone-uvicorn", daemon=True)
+    _thread = threading.Thread(target=_run, name="src-uvicorn", daemon=True)
     _thread.start()
 
     # 等待服务真正就绪（lifespan 完成后 started 置 True）

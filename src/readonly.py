@@ -39,7 +39,7 @@ from app.models import (
 from app.models.content import NoteImage
 from app.services.runs import list_runs
 
-router = APIRouter(tags=["standalone-readonly"])
+router = APIRouter(tags=["src-readonly"])
 
 
 # ---------- 序列化辅助 ----------

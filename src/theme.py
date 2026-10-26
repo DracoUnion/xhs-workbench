@@ -1,0 +1,19 @@
+"""小红书风格主题色。"""
+
+PRIMARY = "#ff2e4d"
+PRIMARY_HOVER = "#eb1f43"
+PRIMARY_PRESSED = "#d93650"
+PRIMARY_TINT = "#fff1f3"
+
+SUCCESS = "#36a269"
+WARNING = "#e88b2e"
+ERROR = "#d93650"
+INFO = "#6f7f95"
+MUTED = "#6b6b72"
+TEXT = "#1f1f23"
+BORDER = "#e5e5e7"
+SURFACE = "#ffffff"
+APP_BACKGROUND = "#f7f7f8"
+
+STATUS_NEUTRAL_BG = "#f2f2f4"
+STATUS_NEUTRAL_FG = "#6b6b72"

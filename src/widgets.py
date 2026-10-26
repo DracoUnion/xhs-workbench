@@ -14,6 +14,10 @@ from PySide6.QtWidgets import (
 )
 
 from client import ApiError
+from theme import (
+    ERROR, INFO, PRIMARY, PRIMARY_TINT, STATUS_NEUTRAL_BG,
+    STATUS_NEUTRAL_FG, SUCCESS, WARNING,
+)
 
 
 def fmt_dt(value: Any) -> str:
@@ -101,21 +105,21 @@ class DataTable(QTableView):
 
 class StatusTag(QLabel):
     COLORS = {
-        "running": ("#e6f4ff", "#1677ff"), "pending": ("#f5f5f5", "#595959"),
-        "blocked": ("#fff7e6", "#d46b08"), "done": ("#f6ffed", "#389e0d"),
-        "failed": ("#fff1f0", "#cf1322"), "killed": ("#f5f5f5", "#8c8c8c"),
-        "观察中": ("#f5f5f5", "#595959"), "升温": ("#fff1f0", "#cf1322"),
-        "已验证": ("#f6ffed", "#389e0d"), "降温": ("#e6f4ff", "#1677ff"),
-        "放弃": ("#f5f5f5", "#8c8c8c"), "draft": ("#f5f5f5", "#595959"),
-        "testing": ("#fff7e6", "#d46b08"), "active": ("#f6ffed", "#389e0d"),
-        "approved": ("#f6ffed", "#389e0d"), "rejected": ("#fff1f0", "#cf1322"),
-        "reviewing": ("#fff7e6", "#d46b08"),
+        "running": (PRIMARY_TINT, PRIMARY), "pending": (STATUS_NEUTRAL_BG, STATUS_NEUTRAL_FG),
+        "blocked": ("#fff7e6", WARNING), "done": ("#f6ffed", SUCCESS),
+        "failed": ("#fff1f0", ERROR), "killed": (STATUS_NEUTRAL_BG, STATUS_NEUTRAL_FG),
+        "观察中": (STATUS_NEUTRAL_BG, STATUS_NEUTRAL_FG), "升温": (PRIMARY_TINT, PRIMARY),
+        "已验证": ("#f6ffed", SUCCESS), "降温": ("#eef2f6", INFO),
+        "放弃": (STATUS_NEUTRAL_BG, STATUS_NEUTRAL_FG), "draft": (STATUS_NEUTRAL_BG, STATUS_NEUTRAL_FG),
+        "testing": ("#fff7e6", WARNING), "active": ("#f6ffed", SUCCESS),
+        "approved": ("#f6ffed", SUCCESS), "rejected": ("#fff1f0", ERROR),
+        "reviewing": ("#fff7e6", WARNING),
     }
     def __init__(self, text: str = "", parent=None):
         super().__init__(text, parent); self.set_status(text)
     def set_status(self, text: str) -> None:
         self.setText(text or "—")
-        bg, fg = self.COLORS.get(text, ("#f0f0f0", "#595959"))
+        bg, fg = self.COLORS.get(text, (STATUS_NEUTRAL_BG, STATUS_NEUTRAL_FG))
         self.setStyleSheet(f"background:{bg};color:{fg};border-radius:4px;padding:2px 8px;")
         self.setAlignment(Qt.AlignCenter)
 
@@ -201,7 +205,7 @@ class ConfirmDialog(QDialog):
 
 
 class StatCard(QWidget):
-    def __init__(self, title: str, value: Any = 0, accent: str = "#1677ff", parent=None):
+    def __init__(self, title: str, value: Any = 0, accent: str = PRIMARY, parent=None):
         super().__init__(parent); layout=QVBoxLayout(self); layout.setContentsMargins(18,14,18,14); self.setObjectName("statCard")
         t=QLabel(title); t.setObjectName("muted"); self.value=QLabel(str(value)); self.value.setObjectName("statValue"); self.value.setStyleSheet(f"color:{accent};"); layout.addWidget(t); layout.addWidget(self.value)
     def set_value(self, value): self.value.setText(str(value))

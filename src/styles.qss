@@ -1,17 +1,18 @@
-/* 自媒体 AI 工作台桌面版 — AntD 风格浅色主题 */
+/* 自媒体 AI 工作台桌面版 — 小红书风格浅色主题 */
+/* 主题 token 与 src/theme.py 对齐：primary #ff2e4d，tint #fff1f3。 */
 * {
     font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
     font-size: 13px;
-    color: #1f2329;
+    color: #1f1f23;
 }
 QMainWindow, QWidget#page {
-    background: #f5f5f5;
+    background: #f7f7f8;
 }
 
 /* ---------- 侧边栏 ---------- */
 QFrame#sidebar {
-    background: #001529;
-    border-right: 1px solid #001529;
+    background: #1f1f23;
+    border-right: 1px solid #1f1f23;
 }
 QLabel#logo {
     color: #ffffff;
@@ -34,14 +35,14 @@ QListWidget#navList::item:hover {
     background: rgba(255, 255, 255, 0.08);
 }
 QListWidget#navList::item:selected {
-    background: #1677ff;
+    background: #ff2e4d;
     color: #ffffff;
 }
 
 /* ---------- 顶栏 ---------- */
 QFrame#headerBar {
     background: #ffffff;
-    border-bottom: 1px solid #e5e6eb;
+    border-bottom: 1px solid #e5e5e7;
 }
 QLabel#wsBadge {
     color: #389e0d;
@@ -58,7 +59,7 @@ QLabel#userLabel {
 QPushButton#linkButton {
     background: transparent;
     border: none;
-    color: #1677ff;
+    color: #ff2e4d;
 }
 
 /* ---------- 页面通用 ---------- */
@@ -97,14 +98,14 @@ QLabel#statValue {
 }
 QWidget#statCard {
     background: #ffffff;
-    border: 1px solid #e5e6eb;
+    border: 1px solid #e5e5e7;
     border-radius: 6px;
 }
 QLabel#stageBar {
     font-size: 14px;
-    color: #1677ff;
+    color: #ff2e4d;
     background: #ffffff;
-    border: 1px solid #e5e6eb;
+    border: 1px solid #e5e5e7;
     border-radius: 6px;
     padding: 10px 14px;
 }
@@ -115,10 +116,10 @@ QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox {
     border: 1px solid #d9d9d9;
     border-radius: 4px;
     padding: 4px 8px;
-    selection-background-color: #1677ff;
+    selection-background-color: #ff2e4d;
 }
 QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QComboBox:focus, QSpinBox:focus {
-    border: 1px solid #1677ff;
+    border: 1px solid #ff2e4d;
 }
 QLineEdit, QComboBox, QSpinBox {
     min-height: 20px;
@@ -133,27 +134,27 @@ QPushButton {
     color: #1f2329;
 }
 QPushButton:hover {
-    border-color: #1677ff;
-    color: #1677ff;
+    border-color: #ff2e4d;
+    color: #ff2e4d;
 }
 QPushButton:pressed {
-    background: #f0f4ff;
+    background: #fff1f3;
 }
 QPushButton:disabled {
     color: #bfbfbf;
-    border-color: #e5e6eb;
+    border-color: #e5e5e7;
     background: #fafafa;
 }
 QPushButton#primaryButton {
-    background: #1677ff;
-    border: 1px solid #1677ff;
+    background: #ff2e4d;
+    border: 1px solid #ff2e4d;
     color: #ffffff;
 }
 QPushButton#primaryButton:hover {
-    background: #4096ff;
+    background: #eb1f43;
 }
 QPushButton#primaryButton:pressed {
-    background: #0958d9;
+    background: #d93650;
 }
 QPushButton#primaryButton:disabled {
     background: #bfbfbf;
@@ -164,17 +165,17 @@ QPushButton#primaryButton:disabled {
 /* ---------- 表格 ---------- */
 QTableView {
     background: #ffffff;
-    border: 1px solid #e5e6eb;
+    border: 1px solid #e5e5e7;
     border-radius: 4px;
     gridline-color: #f0f0f0;
-    selection-background-color: #e6f4ff;
+    selection-background-color: #fff1f3;
     selection-color: #1f2329;
 }
 QTableView::item {
     padding: 4px 8px;
 }
 QTableView::item:selected {
-    background: #e6f4ff;
+    background: #fff1f3;
 }
 QTableView QHeaderView::section {
     background: #fafafa;
@@ -202,7 +203,7 @@ QFormLayout QLabel:first-child {
 QLabel#loginLogo {
     font-size: 26px;
     font-weight: bold;
-    color: #1677ff;
+    color: #ff2e4d;
     padding-top: 120px;
 }
 

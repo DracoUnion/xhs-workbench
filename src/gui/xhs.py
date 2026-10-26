@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 
 from client import ApiError
 from widgets import ConfirmDialog, DetailBlock, Page, StatCard
+from theme import ERROR, PRIMARY, SUCCESS
 
 
 class XhsPage(Page):
@@ -16,7 +17,7 @@ class XhsPage(Page):
         super().__init__(client, "小红书登录态", parent)
 
         top = QHBoxLayout()
-        self.auth_stat = StatCard("登录态", "未知", "#1677ff")
+        self.auth_stat = StatCard("登录态", "未知", PRIMARY)
         top.addWidget(self.auth_stat)
         top.addWidget(QLabel("要求 cookie：a1 + web_session；来源：XHS_COOKIES 或 ~/.xhs-cli/cookies.json"))
         top.addStretch()
@@ -59,7 +60,7 @@ class XhsPage(Page):
         self.clear_info()
         ok = bool(status.get("authenticated"))
         self.auth_stat.set_value("已登录" if ok else "未登录")
-        self.auth_stat.value.setStyleSheet(f"color:{'#389e0d' if ok else '#cf1322'};")
+        self.auth_stat.value.setStyleSheet(f"color:{SUCCESS if ok else ERROR};")
         self.detail.clear()
         self.detail.add("认证状态", "已登录" if ok else "未登录")
         self.detail.add("必需字段", ", ".join(status.get("required", [])))

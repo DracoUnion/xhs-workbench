@@ -7,10 +7,11 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from widgets import DataTable, Page, StatCard, StatusTag, fmt_dt
+from theme import INFO, PRIMARY, STATUS_NEUTRAL_BG, SUCCESS, WARNING
 
 STATUS_COLORS = {
-    "观察中": "#8c8c8c", "升温": "#cf1322", "已验证": "#389e0d",
-    "降温": "#1677ff", "放弃": "#bfbfbf",
+    "观察中": INFO, "升温": PRIMARY, "已验证": SUCCESS,
+    "降温": "#7d8794", "放弃": "#a7a7ad",
 }
 
 
@@ -20,10 +21,10 @@ class DashboardPage(Page):
         self.client = client
 
         stats = QHBoxLayout()
-        self.accounts_today = StatCard("今日分析账号", "—", "#1677ff")
-        self.products_today = StatCard("今日采集商品", "—", "#fa8c16")
-        self.rising = StatCard("升温方向", "—", "#cf1322")
-        self.cooling = StatCard("降温方向", "—", "#8c8c8c")
+        self.accounts_today = StatCard("今日分析账号", "—", PRIMARY)
+        self.products_today = StatCard("今日采集商品", "—", WARNING)
+        self.rising = StatCard("升温方向", "—", PRIMARY)
+        self.cooling = StatCard("降温方向", "—", INFO)
         for c in (self.accounts_today, self.products_today, self.rising, self.cooling):
             stats.addWidget(c)
         self.root.addLayout(stats)
@@ -100,10 +101,10 @@ class DashboardPage(Page):
         series = QPieSeries()
         if not counts:
             series.append("暂无数据", 1)
-            series.slices()[0].setBrush(QColor("#f0f0f0"))
+            series.slices()[0].setBrush(QColor(STATUS_NEUTRAL_BG))
         for status, count in counts.items():
             sl = series.append(status, count)
-            sl.setBrush(QColor(STATUS_COLORS.get(status, "#1677ff")))
+            sl.setBrush(QColor(STATUS_COLORS.get(status, PRIMARY)))
         chart = QChart()
         chart.addSeries(series)
         chart.legend().setVisible(True)

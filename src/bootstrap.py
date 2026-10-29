@@ -30,3 +30,30 @@ os.environ.setdefault("LOG_DIR", str(LOG_DIR))
 os.environ.setdefault("DATA_DIR", str(DATA_DIR))
 
 __all__ = ["APP_DIR", "DATA_DIR", "LOG_DIR"]
+
+
+def build_context(*, max_workers: int = 4) -> "AppContext":
+    """装配零 Qt 服务图并返回 :class:`AppContext`。
+
+    在启动路径（main.py）调用；任何导入后端模块之前必须先 import 本模块
+    （环境预处理副作用）。UI 层只持有 AppContext，不直接构造服务。
+    """
+    from common.context import AppContext
+    from common.events import EventHub
+    from core.config import get_settings
+    from tasks import TaskManager
+
+    settings = get_settings()
+    events = EventHub()
+    tasks = TaskManager(max_workers=max_workers, events=events)
+    return AppContext(
+        settings=settings,
+        events=events,
+        tasks=tasks,
+    )
+
+
+from typing import TYPE_CHECKING  # noqa: E402
+
+if TYPE_CHECKING:
+    from common.context import AppContext  # noqa: F401

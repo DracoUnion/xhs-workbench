@@ -42,16 +42,21 @@ def run() -> None:
 
     from PySide6.QtWidgets import QApplication
 
+    from bootstrap import build_context
     from main_window import MainWindow
     from styles import apply_styles
 
+    ctx = build_context()
     app = QApplication(sys.argv)
     app.setApplicationName("自媒体 AI 工作台")
     apply_styles(app)
 
     win = MainWindow()
+    win.ctx = ctx  # 暴露 AppContext（tasks/events）给页面
     win.show()
-    sys.exit(app.exec())
+    exit_code = app.exec()
+    ctx.tasks.shutdown(wait=False)
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
